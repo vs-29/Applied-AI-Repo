@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-paper text-ink font-sans antialiased;
+}
+
+/* Thin, quiet scrollbars that suit a reading tool. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d3d7de transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #d3d7de;
+  border-radius: 999px;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary-hover;
+  }
+  .btn-ghost {
+    @apply btn text-muted hover:bg-primary-soft hover:text-primary;
+  }
+  .field {
+    @apply w-full rounded-lg border border-hairline bg-surface px-3 py-2 text-sm text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+  .eyebrow {
+    @apply font-mono text-[11px] uppercase tracking-[0.12em] text-faint;
+  }
+}
+
+/* Rendered answer typography */
+.answer {
+  @apply text-[15px] leading-7 text-ink;
+}
+.answer p {
+  @apply mb-3;
+}
+.answer strong {
+  @apply font-semibold;
+}
+.answer ul {
+  @apply mb-3 ml-5 list-disc space-y-1;
+}
+.answer ol {
+  @apply mb-3 ml-5 list-decimal space-y-1;
+}
+.answer code {
+  @apply rounded bg-primary-soft px-1 py-0.5 font-mono text-[13px];
+}
+
+/* Citation chip inside answers */
+.cite-chip {
+  @apply mx-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[5px] bg-primary-soft px-1 align-[1px] font-mono text-[11px] font-medium text-primary transition-colors hover:bg-primary hover:text-white;
+}
+
+/* Highlighted passage in the source viewer */
+.hl {
+  @apply rounded bg-status-indexing/25 px-0.5 py-[1px] shadow-[inset_0_-2px_0_rgba(226,164,0,0.5)];
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
