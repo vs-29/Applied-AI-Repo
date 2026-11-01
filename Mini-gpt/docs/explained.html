@@ -1,0 +1,537 @@
+<title>Tiny GPT, Explained</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Literata:opsz,wght@7..72,400;7..72,600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column; each step is a section with a live demo panel beside its explanation. */
+:root {
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --ink: #141a26;
+  --ink-2: #4a5263;
+  --muted: #7b8394;
+  --line: #dde1e8;
+  --accent: #2a78d6;
+  --accent-soft: #e4eefb;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --mask: #eceef2;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Literata", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11141a; --panel: #1a1e26; --ink: #eceef2; --ink-2: #b4bac6; --muted: #8a92a2;
+    --line: #2c323d; --accent: #5a9cec; --accent-soft: #1d2b40;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --mask: #232833;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11141a; --panel: #1a1e26; --ink: #eceef2; --ink-2: #b4bac6; --muted: #8a92a2;
+  --line: #2c323d; --accent: #5a9cec; --accent-soft: #1d2b40;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --mask: #232833;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 80px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.1rem); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.65rem; font-weight: 700; }
+h3 { font-size: 1.1rem; font-weight: 500; }
+p { margin: 0; max-width: 66ch; }
+code, .mono { font-family: var(--f-mono); font-size: 0.88em; }
+code { background: var(--mask); padding: 1px 5px; border-radius: 4px; }
+.eyebrow { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lede { font-size: 1.15rem; color: var(--ink-2); }
+.hero { display: flex; flex-direction: column; gap: 18px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel-label { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.note { font-size: 0.92rem; color: var(--ink-2); }
+.scroll { overflow-x: auto; }
+
+/* pipeline */
+.pipe { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.pipe div { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--panel); font-size: 0.85rem; line-height: 1.35; display: flex; flex-direction: column; gap: 4px; }
+.pipe b { font-family: var(--f-display); font-weight: 500; font-size: 0.95rem; }
+.pipe span { color: var(--ink-2); }
+@media (max-width: 640px) { .pipe { grid-template-columns: 1fr 1fr; } }
+
+/* tokens */
+input[type=text] { font: inherit; font-family: var(--f-mono); font-size: 1rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); width: 100%; }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: flex; flex-direction: column; align-items: center; min-width: 36px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--bg); }
+.chip .c { font-family: var(--f-mono); font-size: 1.05rem; font-weight: 600; }
+.chip .i { font-family: var(--f-mono); font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chip.bad { border-color: var(--s2); }
+
+/* x/y rows */
+.xy { display: grid; grid-template-columns: auto repeat(8, minmax(30px, 1fr)); gap: 4px; align-items: center; font-family: var(--f-mono); }
+.xy .lab { font-size: 0.75rem; color: var(--muted); padding-right: 6px; }
+.xy .cell { text-align: center; border: 1px solid var(--line); border-radius: 5px; padding: 6px 0; background: var(--bg); font-weight: 600; }
+.xy .cell.y { background: var(--accent-soft); border-color: transparent; }
+.xy .cell.hl { outline: 2px solid var(--accent); }
+
+/* loop */
+.loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; counter-reset: s; }
+.loop div { padding: 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--line); font-size: 0.9rem; line-height: 1.45; display: flex; flex-direction: column; gap: 4px; }
+.loop b { font-family: var(--f-display); font-weight: 500; }
+.loop code { font-size: 0.78rem; }
+@media (max-width: 640px) { .loop { grid-template-columns: 1fr 1fr; } }
+
+/* bigram explorer */
+.keys { display: flex; flex-wrap: wrap; gap: 4px; }
+.keys button { font-family: var(--f-mono); font-size: 0.9rem; min-width: 32px; padding: 5px 7px; border-radius: 5px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.keys button:hover { border-color: var(--accent); }
+.keys button[aria-pressed=true] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.bars { display: flex; flex-direction: column; gap: 6px; }
+.bar { display: grid; grid-template-columns: 44px 1fr 56px; gap: 10px; align-items: center; font-family: var(--f-mono); font-size: 0.9rem; }
+.bar .track { height: 18px; background: var(--mask); border-radius: 0 4px 4px 0; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--s1); border-radius: 0 4px 4px 0; }
+.bar .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+/* attention grid */
+.att { display: grid; grid-template-columns: 34px repeat(8, 1fr); gap: 3px; font-family: var(--f-mono); font-size: 0.78rem; max-width: 520px; }
+.att .h { text-align: center; color: var(--muted); font-weight: 600; }
+.att .w { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.68rem; font-variant-numeric: tabular-nums; cursor: default; }
+.att .w.future { background: var(--mask); color: var(--muted); }
+.att .row-hl { outline: 2px solid var(--ink); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { font: inherit; font-family: var(--f-display); font-size: 0.9rem; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; }
+.seg button[aria-pressed=true] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* qkv */
+.qkv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.qkv div { padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: 0.9rem; line-height: 1.45; display: flex; flex-direction: column; gap: 4px; }
+.qkv b { font-family: var(--f-mono); font-size: 1rem; }
+@media (max-width: 640px) { .qkv { grid-template-columns: 1fr; } }
+
+/* chart */
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; font-family: var(--f-display); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.chart-box { position: relative; }
+svg text { font-family: var(--f-mono); }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-family: var(--f-mono); font-size: 0.78rem; line-height: 1.5; box-shadow: 0 4px 14px rgb(0 0 0 / 0.12); white-space: nowrap; }
+.tip .sw { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+details summary { cursor: pointer; font-family: var(--f-display); color: var(--accent); }
+table { border-collapse: collapse; font-family: var(--f-mono); font-size: 0.82rem; font-variant-numeric: tabular-nums; margin-top: 10px; }
+th, td { padding: 4px 12px; border-bottom: 1px solid var(--line); text-align: right; }
+th { color: var(--muted); font-weight: 600; }
+
+/* results */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); display: flex; flex-direction: column; gap: 2px; }
+.stat .n { font-family: var(--f-display); font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat .k { font-size: 0.85rem; color: var(--ink-2); line-height: 1.4; }
+.stat .who { display: flex; align-items: center; gap: 6px; font-family: var(--f-mono); font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat .who i { width: 10px; height: 10px; border-radius: 50%; }
+@media (max-width: 640px) { .stats { grid-template-columns: 1fr; } }
+.samples { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.samples pre { margin: 0; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; font-family: var(--f-mono); font-size: 0.74rem; line-height: 1.5; white-space: pre-wrap; min-width: 0; }
+.samples h3 { font-size: 0.9rem; margin-bottom: 6px; }
+@media (max-width: 720px) { .samples { grid-template-columns: 1fr; } }
+
+/* files + build */
+.files { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); overflow: hidden; }
+.files div { display: grid; grid-template-columns: 190px 1fr; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+.files div:last-child { border-bottom: 0; }
+.files .mono { font-weight: 600; word-break: break-all; }
+@media (max-width: 560px) { .files div { grid-template-columns: 1fr; gap: 2px; } }
+ol.build { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 10px; max-width: 70ch; }
+pre.cmd { margin: 6px 0 0; padding: 10px 12px; background: var(--mask); border-radius: 6px; font-family: var(--f-mono); font-size: 0.8rem; overflow-x: auto; }
+dl { display: grid; grid-template-columns: 170px 1fr; gap: 10px 18px; margin: 0; }
+dt { font-family: var(--f-display); font-weight: 500; }
+dd { margin: 0; color: var(--ink-2); font-size: 0.95rem; }
+@media (max-width: 560px) { dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 10px; } }
+.next { border-left: 3px solid var(--accent); padding-left: 16px; }
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">CareerOS · P0 · Milestones 1 &amp; 2 of 5</div>
+  <h1>Tiny GPT, explained from zero</h1>
+  <p class="lede">You now have a small program that reads 1.1 million characters of Shakespeare and learns to write text that looks a bit like it. It works the same way ChatGPT does, at a far smaller scale. This page walks through what was built, in the order it was built, with the real numbers from your laptop's GPU.</p>
+  <div class="pipe" aria-label="The whole pipeline">
+    <div><b>1. Text</b><span>Shakespeare, one big .txt file</span></div>
+    <div><b>2. Numbers</b><span>Each character becomes an ID, 0 to 64</span></div>
+    <div><b>3. Model</b><span>Guesses the next character</span></div>
+    <div><b>4. Training</b><span>Nudges the model when it guesses wrong</span></div>
+    <div><b>5. Writing</b><span>Guess, append, repeat</span></div>
+  </div>
+</header>
+
+<section>
+  <div class="eyebrow">The one idea</div>
+  <h2>A language model only does one thing</h2>
+  <p>It looks at some text and predicts <em>what character comes next</em>. That's all. To write a paragraph, it predicts one character, sticks it on the end, and predicts again. ChatGPT does the same thing with word-pieces instead of single characters, and with billions more numbers inside.</p>
+  <p>Everything else in this project is about making that guess better.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Step 1 · Tokenizer</div>
+  <h2>Turning text into numbers</h2>
+  <p>Computers can't do maths on letters, so we give every distinct character in the Shakespeare file a number. There are exactly 65 of them: newline, space, punctuation, <code>3</code>, A–Z and a–z. This list is called the <strong>vocabulary</strong>. Try typing below.</p>
+  <div class="panel">
+    <label class="panel-label" for="tok-in">Type anything</label>
+    <input id="tok-in" type="text" value="To be, or not to be" maxlength="60" autocomplete="off">
+    <div class="chips" id="tok-out" aria-live="polite"></div>
+    <p class="note" id="tok-note">Each box shows a character and its ID. In code these are <code>encode()</code> and <code>decode()</code> in <code>bigram.py</code>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Step 2 · Training examples</div>
+  <h2>The text quizzes itself</h2>
+  <p>We don't need anyone to label data. Take any 8 characters as the input; the answers are the same text shifted one place to the right. One chunk of 8 is really 8 quizzes at once: after <code>F</code> comes <code>i</code>, after <code>Fi</code> comes <code>r</code>, and so on. <code>get_batch()</code> grabs 32 random chunks like this each step.</p>
+  <div class="panel">
+    <div class="panel-label">The first 9 characters of the file · hover a box</div>
+    <div class="scroll"><div class="xy" id="xy"></div></div>
+    <p class="note" id="xy-note">Hover an input box to see which quiz it is.</p>
+  </div>
+  <p class="note">We keep the last 10% of the text hidden from training. That's the <strong>validation</strong> set. If the model does well on text it has never seen, it has learned patterns rather than memorising.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Step 3 · The training loop</div>
+  <h2>Guess, score, adjust, repeat</h2>
+  <p>A model is just a big pile of numbers called <strong>weights</strong>. At the start they're random, so the guesses are random. Training repeats four steps thousands of times:</p>
+  <div class="loop">
+    <div><b>Guess</b>Run the model on a batch.<code>model(xb, yb)</code></div>
+    <div><b>Score</b>How wrong was it? That's the <em>loss</em>.<code>cross_entropy</code></div>
+    <div><b>Blame</b>Work out which weights caused the error.<code>loss.backward()</code></div>
+    <div><b>Adjust</b>Nudge each weight a little to do better.<code>optimizer.step()</code></div>
+  </div>
+  <h3>What the loss number means</h3>
+  <p>Lower is better. A handy way to read it: <code>e<sup>−loss</sup></code> is roughly how much confidence the model puts on the correct next character, on average.</p>
+  <div class="stats">
+    <div class="stat"><div class="who">Random guessing</div><div class="n">4.17</div><div class="k">1 in 65 → about 1.5% on the right answer. This is the starting point.</div></div>
+    <div class="stat"><div class="who"><i style="background:var(--s1)"></i>Bigram</div><div class="n">2.49</div><div class="k">About 8% on the right answer.</div></div>
+    <div class="stat"><div class="who"><i style="background:var(--s3)"></i>4-head attention</div><div class="n">2.28</div><div class="k">About 10%. Small numbers, but every 0.1 lower is a real improvement.</div></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Milestone 1 · bigram.py</div>
+  <h2>Model 1: look at one character only</h2>
+  <p>The simplest model is a 65 × 65 table. Row <em>t</em> says how likely each character is to follow <em>t</em>. It has no memory beyond the single previous character, which is why it's called a <strong>bigram</strong> (two characters) model. Training fills in the table. Below are the real counts from the Shakespeare text, which is what the trained table ends up close to.</p>
+  <div class="panel">
+    <div class="panel-label">Pick a character · what usually comes next?</div>
+    <div class="keys" id="keys" role="group" aria-label="Pick a character"></div>
+    <div class="bars" id="bars" aria-live="polite"></div>
+    <p class="note" id="bars-note"></p>
+  </div>
+  <p>The problem: after <code>e</code> the table always predicts the same spread, whether the word was <code>th<b>e</b></code> or <code>lov<b>e</b></code>. It can't tell. That's why its writing looks like this:</p>
+  <pre class="cmd">Yowhthetof isth ble mil ndill, ath iree sengmin lat Heriliovets</pre>
+</section>
+
+<section>
+  <div class="eyebrow">Milestone 2 · attention_demo.py → gpt.py</div>
+  <h2>Model 2: let characters look back</h2>
+  <p><strong>Self-attention</strong> lets every character look at all the characters before it (up to 8 back) and decide how much each one matters. It can't look forward, because that would be peeking at the answer. The grid shows those decisions for the input <code>First Ci</code>. Each row is one character asking “who should I listen to?”, and each row adds up to 1.</p>
+  <div class="panel">
+    <div class="seg" role="group" aria-label="Attention version">
+      <button type="button" data-mode="bigram" aria-pressed="false">Bigram: only itself</button>
+      <button type="button" data-mode="avg" aria-pressed="false">Equal average of the past</button>
+      <button type="button" data-mode="attn" aria-pressed="true">Attention: weights from the data</button>
+    </div>
+    <div class="scroll"><div class="att" id="att"></div></div>
+    <p class="note" id="att-note"></p>
+  </div>
+  <h3>Where the weights come from: query, key, value</h3>
+  <p>Each character produces three small lists of numbers. Think of a library search:</p>
+  <div class="qkv">
+    <div><b>Query</b>“What am I looking for?” e.g. a vowel wanting the consonant before it.</div>
+    <div><b>Key</b>“What do I contain?” Each earlier character advertises itself.</div>
+    <div><b>Value</b>“What I'll pass on if you pick me.” The actual information shared.</div>
+  </div>
+  <p>Query × key gives a score for every earlier character. Softmax turns the scores into the percentages in the grid, and those percentages mix the values. Nobody writes these rules by hand. Query, key and value are all weights, so training learns what to look for.</p>
+  <p><strong>Multi-head</strong> just means running several small attention layers side by side, each free to track a different pattern, then joining their outputs. With the same total size, 4 heads beat 1 head.</p>
+  <p class="note">We also add a <strong>position embedding</strong>. Attention on its own doesn't know order, so “dog bites man” and “man bites dog” would look the same. Adding a learned vector for “1st position”, “2nd position” and so on fixes that.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Results · your RTX 3050</div>
+  <h2>How the three models learned</h2>
+  <p>Validation loss (on held-back text) measured every few hundred training steps. Each run took about a minute on your GPU.</p>
+  <div class="panel">
+    <div class="legend" id="legend"></div>
+    <div class="chart-box" id="chart-box">
+      <svg id="chart" viewBox="0 0 760 340" width="100%" role="img" aria-label="Validation loss over training steps for the three models"></svg>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <details>
+      <summary>Show the numbers as a table</summary>
+      <div class="scroll"><table id="tbl"></table></div>
+    </details>
+  </div>
+  <p>All three drop fast at first, then level off. The bigram flattens at 2.49 because a lookup table has nothing more to learn. Attention keeps improving, and splitting it into 4 heads helps more. All three models start near the 4.17 line, which shows the setup is correct.</p>
+  <h3>What each model writes</h3>
+  <div class="samples">
+    <div><h3>Bigram</h3><pre>Wanthar u qur, t.
+War dXENDoate awice my.
+
+Hastarom oroup
+Yowhthetof isth ble mil ndill</pre></div>
+    <div><h3>1 head</h3><pre>Want he us he, vet?
+Wedilasoate awice my.
+
+HDET:
+ANGo oug
+Yowhavetof is he ot mil ndill</pre></div>
+    <div><h3>4 heads</h3><pre>Want he us hat vet?
+Wedtlaccane awice my.
+
+Youts, tof is heirt mil nowlit,
+Whiiree--viecin lat Het drov the and Wing.</pre></div>
+  </div>
+  <p>Still not English, but it has learned the format of a play (NAMES in capitals, line breaks, punctuation), and real words like <em>he</em>, <em>the</em>, <em>and</em> are showing up.</p>
+</section>
+
+<section>
+  <div class="eyebrow">How it was built</div>
+  <h2>What happened on your laptop</h2>
+  <ol class="build">
+    <li><strong>Made an isolated Python environment</strong> (<code>.venv</code>) so this project's packages don't clash with anything else.
+      <pre class="cmd">python -m venv .venv</pre></li>
+    <li><strong>Installed PyTorch with CUDA</strong>, the library that does the maths, built to run on your NVIDIA GPU. Then numpy and matplotlib.
+      <pre class="cmd">.venv\Scripts\pip install -r requirements.txt</pre></li>
+    <li><strong>Downloaded the training text</strong>, Tiny Shakespeare (1,115,394 characters), into <code>data/input.txt</code>.</li>
+    <li><strong>Wrote and ran the bigram model.</strong>
+      <pre class="cmd">.venv\Scripts\python bigram.py</pre></li>
+    <li><strong>Wrote the attention demo</strong>, which builds attention up in 4 small versions so you can see each idea on its own.
+      <pre class="cmd">.venv\Scripts\python attention_demo.py</pre></li>
+    <li><strong>Wrote and ran the attention model</strong>, twice, to compare 1 head with 4.
+      <pre class="cmd">.venv\Scripts\python gpt.py --heads 1
+.venv\Scripts\python gpt.py --heads 4</pre></li>
+  </ol>
+  <p class="note">About charts: nothing has drawn a matplotlib plot yet. The scripts only print loss numbers to the terminal; the chart above was drawn from those printed numbers. Saving a real loss-curve image is part of Milestone 5.</p>
+</section>
+
+<section>
+  <div class="eyebrow">Your files</div>
+  <h2>What lives in <code>Mini-gpt/</code></h2>
+  <div class="files">
+    <div><span class="mono">data/input.txt</span><span>The Shakespeare text the model learns from.</span></div>
+    <div><span class="mono">bigram.py</span><span>Milestone 1. Data loading, the training loop, and the 65 × 65 lookup-table model. Read this first.</span></div>
+    <div><span class="mono">attention_demo.py</span><span>Not a model. A walkthrough of the attention maths on tiny made-up numbers: loop → matrix → softmax → query/key/value.</span></div>
+    <div><span class="mono">gpt.py</span><span>Milestone 2. Same training loop as <code>bigram.py</code>, plus position embeddings and multi-head attention. Grows into the full GPT in Milestone 3.</span></div>
+    <div><span class="mono">requirements.txt</span><span>Exact package versions, so the setup can be rebuilt.</span></div>
+    <div><span class="mono">.venv/</span><span>The installed packages. Ignored by git; never edit it.</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Words you'll keep seeing</div>
+  <h2>Glossary</h2>
+  <dl>
+    <dt>Token</dt><dd>One unit of text the model reads. Here, a single character.</dd>
+    <dt>Embedding</dt><dd>A list of numbers that represents a token. The model learns these, so similar characters end up with similar lists.</dd>
+    <dt>Logits</dt><dd>The model's raw scores for each of the 65 possible next characters. Softmax turns them into probabilities.</dd>
+    <dt>Batch</dt><dd>A group of examples processed together (32 chunks here). GPUs are fast because they do many at once.</dd>
+    <dt>Step / iteration</dt><dd>One round of guess → score → blame → adjust.</dd>
+    <dt>Learning rate</dt><dd>How big each nudge is. Too big and training is unstable; too small and it's slow.</dd>
+    <dt>Tensor</dt><dd>PyTorch's word for a grid of numbers. Shapes like <code>(B, T, C)</code> mean batch × time (position) × channels (numbers per token).</dd>
+  </dl>
+</section>
+
+<section class="next">
+  <div class="eyebrow">Next · Milestone 3</div>
+  <h2>From attention to a real transformer</h2>
+  <p>We'll add a small “thinking” layer after attention (feed-forward), plus two tricks that make deep models trainable (residual connections and layer norm). Then we stack several of these blocks and let the model see further back. Expected result: validation loss around 1.5–1.7, and text that starts to read like Shakespeare.</p>
+</section>
+
+</div>
+
+<script>
+const BIG = {"chars":["\n"," ","!","$","&","'",",","-",".","3",":",";","?","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"],"next":{"\n":[["\n",0.1806],["T",0.1036],["A",0.0958],["W",0.0682],["I",0.0624],["S",0.0418]]," ":[["t",0.1403],["a",0.0797],["s",0.0723],["h",0.0702],["m",0.0635],["w",0.0621]],"!":[["\n",0.5658],[" ",0.4047],["'",0.0198],["-",0.0097]],"$":[["l",1.0]],"&":[["C",0.6667],["c",0.3333]],"'":[["s",0.3393],["d",0.235],["l",0.1015],["t",0.0954],[" ",0.0777],["e",0.0393]],",":[[" ",0.7104],["\n",0.2774],["-",0.0088],["'",0.0034]],"-":[["-",0.2351],["\n",0.1276],["m",0.0643],["s",0.0559],["d",0.0543],["b",0.0527]],".":[["\n",0.8467],[" ",0.1439],["'",0.0084],["-",0.001]],"3":[[" ",1.0]],":":[["\n",0.8494],[" ",0.1467],["'",0.0021],["-",0.0018]],";":[[" ",0.5265],["\n",0.4655],["'",0.0055],["-",0.0025]],"?":[["\n",0.7445],[" ",0.2449],["'",0.0061],["-",0.0045]],"A":[["n",0.2704],["R",0.1438],["N",0.0866],[":",0.0729],["s",0.0504],[" ",0.0468]],"B":[["u",0.2427],["e",0.1329],["E",0.1282],["R",0.0779],["o",0.0601],["y",0.0587]],"C":[["E",0.1772],["H",0.1414],["o",0.1275],["A",0.0872],["a",0.0736],["I",0.0715]],"D":[[" ",0.1805],["U",0.1742],[":",0.1187],["W",0.0847],["o",0.0833],["I",0.0613]],"E":[["N",0.2273],["R",0.1101],["T",0.104],["S",0.1033],["L",0.0796],[":",0.0694]],"F":[["o",0.3083],["i",0.1714],[" ",0.1191],["r",0.1074],["a",0.0718],["R",0.0445]],"G":[["o",0.2168],[" ",0.1938],["L",0.0955],["R",0.0734],["r",0.0529],["A",0.0479]],"H":[["e",0.2422],["A",0.1724],["a",0.1418],["o",0.1079],["E",0.105],["I",0.0541]],"I":[[" ",0.367],["N",0.111],["O",0.106],["C",0.043],["'",0.0397],["U",0.0396]],"J":[["U",0.3906],["u",0.2562],["o",0.1437],["O",0.1062],["a",0.0563],["e",0.0469]],"K":[["I",0.351],["E",0.2506],[":",0.1881],["i",0.0638],["a",0.0574],["A",0.0518]],"L":[["A",0.1664],["I",0.1576],["O",0.1445],["o",0.0947],["E",0.0844],["U",0.08]],"M":[["a",0.1665],["y",0.1602],["E",0.1592],["I",0.1271],["o",0.0665],["A",0.0637]],"N":[["G",0.1548],["o",0.1451],["I",0.1055],["T",0.102],["C",0.0825],["E",0.0662]],"O":[[":",0.2726],["R",0.121],["L",0.0907],["N",0.0743],["M",0.0598],[" ",0.0498]],"P":[["E",0.206],["r",0.1469],["e",0.0902],["a",0.0823],["O",0.0713],["R",0.0689]],"Q":[["U",0.9351],["u",0.0649]],"R":[["I",0.1662],["D",0.1228],["O",0.083],["E",0.0733],["U",0.0655],[":",0.0589]],"S":[[":",0.2719],["T",0.0975],["e",0.0902],["o",0.0792],["h",0.0758],["i",0.0621]],"T":[["h",0.4316],["o",0.1283],["I",0.081],["E",0.0716],[":",0.0549],["H",0.0399]],"U":[["S",0.2701],["C",0.2188],["K",0.0872],["L",0.0842],["E",0.0733],["T",0.0685]],"V":[["I",0.4273],["O",0.1516],[":",0.1378],["i",0.0639],["o",0.0589],["e",0.0576]],"W":[["h",0.5079],["e",0.1337],["i",0.1249],["A",0.0799],["a",0.0669],["I",0.0363]],"X":[["E",0.625],["I",0.1875],["F",0.125],["T",0.0536],["a",0.0089]],"Y":[["o",0.3894],[" ",0.1874],[":",0.1566],["O",0.1094],["e",0.099],["C",0.039]],"Z":[["A",0.7172],["E",0.2273],["W",0.0303],["o",0.0253]],"a":[["n",0.1837],["t",0.1502],["r",0.1276],["l",0.0747],["s",0.0701],[" ",0.0484]],"b":[["e",0.3497],["u",0.1174],["l",0.1128],["r",0.1021],["o",0.0926],["a",0.0726]],"c":[["e",0.2147],["o",0.1996],["h",0.1988],["a",0.1034],["k",0.0679],["t",0.0429]],"d":[[" ",0.4517],["e",0.111],["o",0.0645],[",",0.064],["i",0.0557],["s",0.0439]],"e":[[" ",0.2922],["r",0.1244],["n",0.08],["s",0.0685],["a",0.0665],[",",0.0406]],"f":[[" ",0.2969],["o",0.2108],["a",0.0968],["e",0.0947],["r",0.0707],["i",0.062]],"g":[[" ",0.1917],["h",0.1515],["e",0.145],["o",0.1076],["r",0.0848],["a",0.0588]],"h":[["e",0.3548],["a",0.1885],["i",0.1363],["o",0.1013],[" ",0.0997],["y",0.0312]],"i":[["n",0.2329],["s",0.1653],["t",0.1343],["l",0.0677],["r",0.0593],["e",0.0496]],"j":[["o",0.3328],["u",0.3248],["e",0.3105],["a",0.0303],["i",0.0016]],"k":[["e",0.3291],[" ",0.1979],["i",0.1426],["n",0.1047],[",",0.0563],["s",0.0522]],"l":[["l",0.1907],[" ",0.1623],["e",0.1327],["o",0.1012],["i",0.0843],["d",0.0717]],"m":[["e",0.2758],["a",0.1501],["y",0.1312],[" ",0.114],["o",0.0825],["i",0.0662]],"n":[["d",0.1918],[" ",0.18],["o",0.1073],["g",0.1059],["e",0.0808],["t",0.0762]],"o":[["u",0.1935],["r",0.1285],[" ",0.1236],["n",0.0978],["t",0.0617],["w",0.0602]],"p":[["e",0.184],["r",0.1591],["o",0.1335],["a",0.1147],["l",0.0835],[" ",0.0631]],"q":[["u",1.0]],"r":[[" ",0.2151],["e",0.2013],["o",0.0739],["i",0.0617],["d",0.0542],["s",0.0542]],"s":[[" ",0.3092],["t",0.1373],["e",0.1108],["h",0.0636],["o",0.057],[",",0.0485]],"t":[["h",0.3393],[" ",0.2464],["o",0.0875],["e",0.0662],["i",0.0444],["a",0.0292]],"u":[["r",0.1999],[" ",0.1374],["s",0.1232],["t",0.1092],["l",0.0837],["n",0.0816]],"v":[["e",0.7681],["i",0.1245],["o",0.0493],["a",0.0461],["y",0.0113],["u",0.0008]],"w":[["i",0.2198],["e",0.1696],["h",0.1268],["a",0.116],["o",0.1091],[" ",0.1051]],"x":[["t",0.2552],["e",0.1928],["c",0.138],["p",0.104],[" ",0.0681],["i",0.0529]],"y":[[" ",0.5029],["o",0.2312],[",",0.0815],["e",0.0379],[".",0.0274],["s",0.0239]],"z":[["e",0.8006],["a",0.0618],["z",0.0309],["i",0.0309],["o",0.0197],["y",0.014]]},"len":1115394};
+const show = c => c === "\n" ? "↵" : c === " " ? "␣" : c;
+const stoi = Object.fromEntries(BIG.chars.map((c, i) => [c, i]));
+
+// Tokenizer
+const tin = document.getElementById("tok-in"), tout = document.getElementById("tok-out"), tnote = document.getElementById("tok-note");
+const baseNote = tnote.innerHTML;
+function renderTok() {
+  tout.innerHTML = "";
+  let bad = 0;
+  for (const ch of tin.value) {
+    const d = document.createElement("div");
+    const id = stoi[ch];
+    d.className = "chip" + (id === undefined ? " bad" : "");
+    if (id === undefined) bad++;
+    d.innerHTML = `<span class="c"></span><span class="i">${id === undefined ? "?" : id}</span>`;
+    d.querySelector(".c").textContent = show(ch);
+    tout.appendChild(d);
+  }
+  tnote.innerHTML = bad ? `${bad} character${bad > 1 ? "s" : ""} never appear in Shakespeare's text, so they have no ID. The model literally cannot read them.` : baseNote;
+}
+tin.addEventListener("input", renderTok); renderTok();
+
+// x / y rows
+const sample = "First Citi";
+const xy = document.getElementById("xy"), xyNote = document.getElementById("xy-note");
+const xs = [], ys = [];
+const mk = (cls, txt) => { const d = document.createElement("div"); d.className = cls; d.textContent = txt; xy.appendChild(d); return d; };
+mk("lab", "input x");
+for (let i = 0; i < 8; i++) xs.push(mk("cell", show(sample[i])));
+mk("lab", "target y");
+for (let i = 0; i < 8; i++) ys.push(mk("cell y", show(sample[i + 1])));
+xs.forEach((el, i) => {
+  const on = () => {
+    xs.forEach((e, j) => e.classList.toggle("hl", j <= i)); ys.forEach((e, j) => e.classList.toggle("hl", j === i));
+    xyNote.innerHTML = `Quiz ${i + 1}: given <code>${sample.slice(0, i + 1).replace(/ /g, "␣")}</code>, the right answer is <code>${show(sample[i + 1])}</code>.`;
+  };
+  el.tabIndex = 0; el.addEventListener("mouseenter", on); el.addEventListener("focus", on);
+});
+
+// Bigram explorer
+const keyset = ["\n", " ", "!", ",", ".", ":", "?", "A", "I", "T", "a", "e", "h", "i", "n", "o", "q", "r", "s", "t", "u", "y"];
+const keys = document.getElementById("keys"), bars = document.getElementById("bars"), bnote = document.getElementById("bars-note");
+function pick(ch) {
+  keys.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.ch === ch));
+  const rows = BIG.next[ch];
+  bars.innerHTML = "";
+  rows.forEach(([n, p]) => {
+    const r = document.createElement("div"); r.className = "bar";
+    r.innerHTML = `<span></span><div class="track"><div class="fill" style="width:${(p * 100).toFixed(1)}%"></div></div><span class="v">${(p * 100).toFixed(1)}%</span>`;
+    r.firstChild.textContent = `${show(ch)}→${show(n)}`;
+    bars.appendChild(r);
+  });
+  const top = rows[0];
+  bnote.textContent = top[1] > 0.99 ? `After "${show(ch)}" the next character is always "${show(top[0])}". Easy guess.`
+    : `After "${show(ch)}" the best guess is "${show(top[0])}", but only ${(top[1] * 100).toFixed(0)}% of the time. Without more context, that's the limit.`;
+}
+keyset.forEach(ch => {
+  const b = document.createElement("button"); b.type = "button"; b.dataset.ch = ch; b.textContent = show(ch);
+  b.setAttribute("aria-label", ch === "\n" ? "newline" : ch === " " ? "space" : ch);
+  b.addEventListener("click", () => pick(ch)); keys.appendChild(b);
+});
+pick("t");
+
+// Attention grid
+const word = "First Ci";
+const ATT = [[1],[.51,.49],[.24,.21,.56],[.21,.15,.52,.12],[.18,.17,.23,.25,.17],[.13,.19,.14,.15,.20,.19],[.14,.06,.41,.10,.11,.14,.05],[.11,.18,.09,.13,.12,.20,.09,.09]];
+const att = document.getElementById("att"), anote = document.getElementById("att-note");
+const notes = {
+  bigram: "Bigram: each character only uses itself. All the weight sits on the diagonal.",
+  avg: "Equal average: each character gives every earlier character the same share. Better than nothing, but a space and a capital letter count the same.",
+  attn: "Attention: the shares differ, and they depend on what the characters are. These numbers come from attention_demo.py with untrained weights, so they're not meaningful yet. Training is what makes them useful."
+};
+function weights(mode, r) {
+  return Array.from({ length: 8 }, (_, c) => c > r ? null : mode === "bigram" ? (c === r ? 1 : 0) : mode === "avg" ? 1 / (r + 1) : ATT[r][c]);
+}
+function renderAtt(mode) {
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.mode === mode));
+  att.innerHTML = "";
+  const h = t => { const d = document.createElement("div"); d.className = "h"; d.textContent = t; att.appendChild(d); return d; };
+  h("");
+  for (const ch of word) h(show(ch));
+  const accent = getComputedStyle(document.documentElement).getPropertyValue("--s1").trim();
+  for (let r = 0; r < 8; r++) {
+    const lab = h(show(word[r]));
+    const cells = [];
+    weights(mode, r).forEach(w => {
+      const d = document.createElement("div");
+      if (w === null) { d.className = "w future"; d.textContent = "·"; d.title = "future: hidden"; }
+      else {
+        d.className = "w";
+        d.style.background = `color-mix(in srgb, ${accent} ${Math.round(w * 100)}%, transparent)`;
+        d.style.color = w > 0.45 ? "#fff" : "var(--ink)";
+        d.textContent = w === 0 ? "0" : w.toFixed(2).replace(/^0/, "");
+      }
+      cells.push(d); att.appendChild(d);
+    });
+    const on = () => { att.querySelectorAll(".row-hl").forEach(e => e.classList.remove("row-hl")); lab.classList.add("row-hl"); };
+    cells.forEach(c => c.addEventListener("mouseenter", on));
+  }
+  anote.textContent = notes[mode];
+}
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => renderAtt(b.dataset.mode)));
+renderAtt("attn");
+
+// Loss chart
+const S = [
+  { name: "Bigram", color: "--s1", pts: [0,300,600,900,1200,1500,1800,2100,2400,2700,2999].map((s, i) => [s, [4.7241,2.8249,2.5682,2.5088,2.5035,2.4921,2.4936,2.4846,2.4879,2.4911,2.4903][i]]) },
+  { name: "1 head", color: "--s2", pts: [0,500,1000,1500,2000,2500,3000,3500,4000,4500,4999].map((s, i) => [s, [4.2047,2.7087,2.5303,2.4829,2.4523,2.4435,2.4327,2.4212,2.3992,2.4084,2.4126][i]]) },
+  { name: "4 heads", color: "--s3", pts: [0,500,1000,1500,2000,2500,3000,3500,4000,4500,4999].map((s, i) => [s, [4.2250,2.6809,2.5189,2.4447,2.3890,2.3606,2.3361,2.3138,2.2796,2.2816,2.2798][i]]) },
+];
+const svg = document.getElementById("chart"), tip = document.getElementById("tip"), box = document.getElementById("chart-box");
+const W = 760, H = 340, m = { l: 48, r: 92, t: 14, b: 40 };
+const X = s => m.l + (s / 5000) * (W - m.l - m.r);
+const Y = v => m.t + ((4.8 - v) / (4.8 - 2.0)) * (H - m.t - m.b);
+const NS = "http://www.w3.org/2000/svg";
+const el = (t, a, p = svg) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+function drawChart() {
+  svg.innerHTML = "";
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  [2.0, 2.5, 3.0, 3.5, 4.0, 4.5].forEach(v => {
+    el("line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), stroke: css("--line"), "stroke-width": 1 });
+    el("text", { x: m.l - 8, y: Y(v) + 4, "text-anchor": "end", "font-size": 11, fill: css("--muted") }).textContent = v.toFixed(1);
+  });
+  [0, 1000, 2000, 3000, 4000, 5000].forEach(s => {
+    el("text", { x: X(s), y: H - m.b + 18, "text-anchor": "middle", "font-size": 11, fill: css("--muted") }).textContent = s.toLocaleString();
+  });
+  el("text", { x: (m.l + W - m.r) / 2, y: H - 4, "text-anchor": "middle", "font-size": 11, fill: css("--ink-2") }).textContent = "training step";
+  el("line", { x1: m.l, x2: W - m.r, y1: Y(4.174), y2: Y(4.174), stroke: css("--ink-2"), "stroke-width": 1, "stroke-dasharray": "4 4" });
+  el("text", { x: W - m.r - 4, y: Y(4.174) - 6, "text-anchor": "end", "font-size": 11, fill: css("--ink-2") }).textContent = "random guessing · 4.17";
+  const labelY = { "Bigram": 0, "1 head": 0, "4 heads": 0 };
+  S.forEach(s => {
+    el("polyline", { points: s.pts.map(([a, b]) => `${X(a)},${Y(b)}`).join(" "), fill: "none", stroke: css(s.color), "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" });
+    const [ls, lv] = s.pts[s.pts.length - 1];
+    el("circle", { cx: X(ls), cy: Y(lv), r: 4, fill: css(s.color), stroke: css("--panel"), "stroke-width": 2 });
+  });
+  // direct labels at line ends, nudged apart
+  const ends = S.map(s => ({ s, x: X(s.pts.at(-1)[0]), y: Y(s.pts.at(-1)[1]), v: s.pts.at(-1)[1] }));
+  ends.filter(e => e.s.name !== "Bigram").sort((a, b) => a.y - b.y).forEach((e, i, arr) => { if (i && e.y - arr[i - 1].ly < 14) e.ly = arr[i - 1].ly + 14; else e.ly = e.y; });
+  ends.forEach(e => {
+    const ly = e.ly ?? e.y;
+    const lx = e.s.name === "Bigram" ? e.x : e.x + 8;
+    const anchor = e.s.name === "Bigram" ? "middle" : "start";
+    el("text", { x: lx, y: e.s.name === "Bigram" ? ly - 10 : ly + 4, "text-anchor": anchor, "font-size": 11, fill: css("--ink") }).textContent = `${e.s.name} ${e.v.toFixed(2)}`;
+  });
+  const cross = el("line", { x1: 0, x2: 0, y1: m.t, y2: H - m.b, stroke: css("--muted"), "stroke-width": 1, visibility: "hidden" });
+  const hit = el("rect", { x: m.l, y: m.t, width: W - m.l - m.r, height: H - m.t - m.b, fill: "transparent" });
+  const move = ev => {
+    const r = svg.getBoundingClientRect();
+    const sx = ((ev.clientX - r.left) / r.width) * W;
+    const step = Math.max(0, Math.min(5000, ((sx - m.l) / (W - m.l - m.r)) * 5000));
+    let rows = [], snap = null;
+    S.forEach(s => {
+      const near = s.pts.reduce((a, b) => Math.abs(b[0] - step) < Math.abs(a[0] - step) ? b : a);
+      if (Math.abs(near[0] - step) <= 260) { rows.push([s, near]); if (snap === null || Math.abs(near[0] - step) < Math.abs(snap - step)) snap = near[0]; }
+    });
+    if (!rows.length) { tip.hidden = true; cross.setAttribute("visibility", "hidden"); return; }
+    cross.setAttribute("x1", X(snap)); cross.setAttribute("x2", X(snap)); cross.setAttribute("visibility", "visible");
+    tip.innerHTML = `<div style="color:var(--muted)">step ≈ ${snap.toLocaleString()}</div>` + rows.map(([s, p]) => `<div><span class="sw" style="background:var(${s.color})"></span>${s.name}: ${p[1].toFixed(3)} <span style="color:var(--muted)">@${p[0]}</span></div>`).join("");
+    tip.hidden = false;
+    const br = box.getBoundingClientRect();
+    let left = ev.clientX - br.left + 14;
+    if (left + tip.offsetWidth > br.width) left = ev.clientX - br.left - tip.offsetWidth - 14;
+    tip.style.left = Math.max(0, left) + "px"; tip.style.top = Math.max(0, ev.clientY - br.top - 20) + "px";
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerleave", () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); });
+}
+drawChart();
+const lg = document.getElementById("legend");
+S.forEach(s => { const sp = document.createElement("span"); sp.innerHTML = `<i style="background:var(${s.color})"></i>${s.name}`; lg.appendChild(sp); });
+const sp = document.createElement("span"); sp.innerHTML = `<i style="background:repeating-linear-gradient(90deg,var(--ink-2) 0 4px,transparent 4px 8px)"></i>random guessing`; lg.appendChild(sp);
+const tbl = document.getElementById("tbl");
+tbl.innerHTML = `<tr><th>step</th><th>Bigram</th><th>1 head</th><th>4 heads</th></tr>` +
+  [...new Set(S.flatMap(s => s.pts.map(p => p[0])))].sort((a, b) => a - b).map(st =>
+    `<tr><td>${st}</td>${S.map(s => { const p = s.pts.find(q => q[0] === st); return `<td>${p ? p[1].toFixed(4) : "–"}</td>`; }).join("")}</tr>`).join("");
+const mq = matchMedia("(prefers-color-scheme: dark)");
+const redraw = () => { drawChart(); renderAtt(document.querySelector('.seg button[aria-pressed="true"]').dataset.mode); };
+mq.addEventListener?.("change", redraw);
+new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
