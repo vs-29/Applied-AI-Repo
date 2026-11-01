@@ -1,0 +1,22 @@
+[
+ {
+  "tokenizer": "char-level (ours, M1-M3)",
+  "vocab": 65,
+  "tokens": 111540
+ },
+ {
+  "tokenizer": "toy BPE (ours, M4)",
+  "vocab": 512,
+  "tokens": 57517
+ },
+ {
+  "tokenizer": "GPT-2 BPE (tiktoken)",
+  "vocab": 50257,
+  "tokens": 36059
+ },
+ {
+  "tokenizer": "GPT-4 BPE (tiktoken)",
+  "vocab": 100277,
+  "tokens": 31469
+ }
+]
