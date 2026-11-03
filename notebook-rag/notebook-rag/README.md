@@ -56,16 +56,52 @@ pipeline, and it deploys to Vercel as-is.
 │    /api/notebooks/[id]/sources   add + list sources         │
 │    /api/sources/[id]      delete / reindex / content        │
 │    /api/query             retrieve + stream answer          │
+│    /api/inngest           queue → runs indexing steps        │
 │                       │                                     │
 │    lib/ingest  ─ extract → chunk → embed                    │
 │    lib/rag     ─ retrieve → prompt → stream                 │
-└───────┬───────────────────────────────┬───────────────────┘
-        │ embeddings + chat             │ vectors + metadata
-        ▼                               ▼
-   OpenAI API                      Qdrant Cloud
-   text-embedding-3-small          notebook_chunks_hybrid (1536-d dense + BM25 sparse)
-   gpt-4o-mini (stream)            notebook_entities (notebooks + sources)
+│    inngest/    ─ events + the "ingest-source" function      │
+└───────┬───────────────┬───────────────┬───────────────────┘
+        │ embeddings    │ events ▲ steps │ vectors + metadata
+        │ + chat        ▼        │       ▼
+   OpenAI API         Inngest           Qdrant Cloud
+   text-embedding-    (event queue,     notebook_chunks_hybrid (dense + BM25 sparse)
+   3-small,           retries, steps)   notebook_entities (notebooks + sources)
+   gpt-4o-mini
 ```
+
+### Indexing flow (event-driven)
+
+```
+POST /sources ─► save source ─► extract text now if it's a file (PDF/VTT/text)
+              ─► send event "source/added" { sourceId, notebookId, ownerId } ─► 202
+                                   │
+   Inngest function "ingest-source" (retries 4, ≤2 runs per user, ≤5 overall)
+     step fetch      URL / YouTube only: download + extract, save segments
+     step plan       new generation, count batches, status "indexing 0/N"
+     step embed-k    embed 96 chunks → upsert to Qdrant → progress k/N
+     step finalize   delete the previous generation's chunks → "ready"
+     onFailure       after the last retry: status "error" + reason
+     cancelOn        "source/deleted" for the same sourceId
+```
+
+- **Events carry ids, not files.** Uploaded files are converted to text in the
+  request (fast) and stored; the queue only needs the source id.
+- **Each step is retried on its own.** A rate-limited batch 7 retries batch 7;
+  batches 1–6 aren't redone. Each step is one short invocation, so no single
+  request has to cover a whole large source.
+- **Idempotent writes.** Chunk ids are derived from
+  `(sourceId, generation, index)`, so a retried step overwrites its own chunks.
+- **Zero-downtime re-index.** A new generation is written next to the current
+  one, which keeps answering questions until `finalize` removes it. A re-index
+  that fails halfway leaves the previous version intact.
+- **Fairness and back-pressure.** Concurrency is capped per user and globally,
+  so one user's bulk upload can't starve others or trip OpenAI rate limits.
+- **Permanent errors don't retry.** A video without captions or a 404 throws
+  `NonRetriableError` and fails fast with a clear message.
+
+The browser is unaware of the queue: it polls the source list every 2s while
+anything is uploading or indexing, and shows `k/N batches` progress.
 
 ### Retrieval flow (a single question)
 
@@ -120,7 +156,13 @@ npm install
 cp .env.example .env      # then fill in the values (see below)
 npm run init:qdrant       # optional — collections are also created on first use
 npm run dev               # http://localhost:3000
+npm run inngest           # in a 2nd terminal: queue dev server + dashboard on :8288
 ```
+
+Indexing runs through the Inngest queue, so **both** processes must be running
+locally. Without `npm run inngest`, new sources fail with "Could not queue this
+source for indexing". Open <http://localhost:8288> to watch events and each
+run's steps, retries and errors.
 
 ### Environment variables
 
@@ -152,11 +194,14 @@ Sensible defaults are applied for models, collection names, chunk size/overlap
 2. Import it in Vercel (framework auto-detects as Next.js).
 3. Add the environment variables from your `.env` in **Project → Settings →
    Environment Variables**.
-4. Deploy. Collections are created automatically on the first request.
+4. Install the **Inngest Vercel integration** (<https://app.inngest.com>) and
+   link this project. It sets `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` and
+   syncs `/api/inngest` on each deploy.
+5. Deploy. Collections are created automatically on the first request.
 
-> The ingestion and query routes set `maxDuration = 60`. On Vercel's Hobby tier
-> functions cap at 10s, which is fine for typical sources; large PDFs or long
-> videos benefit from the Pro tier or the background-queue approach noted below.
+> Every queue step is its own short invocation (one batch of embeddings at
+> most), so large sources aren't limited by a single function's time limit.
+> File upload + text extraction still happen in the add-source request.
 
 ---
 
@@ -167,9 +212,12 @@ so embeddings stay uniform and no fact is lost at a boundary. Window edges snap
 to whitespace so words are never cut. Each chunk inherits location metadata from
 the segments it overlaps — this is the link that makes a citation inspectable.
 
-**Ingestion** (`src/lib/ingest/`) runs extract → persist segments → chunk → embed
-→ upsert, writing the source's status at each step. Re-indexing re-chunks and
-re-embeds from the stored extraction without re-fetching the original.
+**Ingestion** (`src/lib/ingest/`) is a set of small stages (extract and store,
+plan chunks, embed one batch, finalize) that the Inngest function in
+`src/inngest/functions.ts` runs as separate steps. Re-indexing re-chunks and
+re-embeds from the stored extraction without re-fetching the original. Scripts
+(`npm run eval`, `npm run reindex:all`) run the same stages inline, without the
+queue.
 
 **Answering** (`src/lib/rag/`, `src/app/api/query`) retrieves, builds a grounded
 prompt, and streams the completion. The response body is
@@ -185,15 +233,15 @@ then type out the answer.
   the whole app needs only two services (OpenAI + Qdrant). The store is isolated
   behind `src/lib/store.ts` — in production you'd swap that module for Postgres
   and keep everything else unchanged.
-- **Background ingestion, without a queue.** Adding or re-indexing a source
-  returns `202` immediately; extraction and embedding continue after the
-  response (`src/lib/background.ts`, using Vercel's `waitUntil`), and the UI
-  polls every 2s until the source is `ready` or `error`. A job that stops
-  updating for 10 minutes is shown as interrupted, so nothing spins forever.
-  The work still runs inside one function invocation, so on Vercel it's capped
-  by `maxDuration` (60s): fine for typical sources, not for very large PDFs or
-  long videos. The next step is a job queue (Inngest / QStash) running each
-  embedding batch as its own retried step, with uploads stored in Vercel Blob.
+- **Event-driven indexing on Inngest** (see "Indexing flow" above). The
+  trade-off is one more service, and a second local process. Files are still
+  extracted in the upload request rather than in the queue, which avoids a blob
+  store but means a huge PDF's parsing is bound by that request's time limit;
+  storing uploads in Vercel Blob would move extraction into a step too. A source
+  whose status hasn't changed for 10 minutes is shown as interrupted.
+- **Brief overlap during re-index.** Until `finalize`, a source's old and new
+  chunk generations coexist, so a question asked mid-re-index can retrieve the
+  same passage twice.
 - **Original files aren't stored.** The Source Viewer renders the extracted text
   (highlighted) rather than the original binary, since no blob store is
   provisioned. Adding Vercel Blob or S3 would let the PDF viewer show the real
@@ -244,6 +292,7 @@ scripts/
 
 ```bash
 npm run dev          # start the dev server
+npm run inngest      # start the Inngest dev server + dashboard (:8288)
 npm run build        # production build
 npm run start        # run the production build
 npm run typecheck    # tsc --noEmit

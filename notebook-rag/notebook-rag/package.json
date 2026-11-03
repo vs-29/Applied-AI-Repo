@@ -11,12 +11,13 @@
     "typecheck": "tsc --noEmit",
     "init:qdrant": "tsx --env-file=.env scripts/init-qdrant.ts",
     "eval": "tsx --env-file=.env scripts/eval-retrieval.ts",
-    "reindex:all": "tsx --env-file=.env scripts/reindex-all.ts"
+    "reindex:all": "tsx --env-file=.env scripts/reindex-all.ts",
+    "inngest": "npx --yes inngest-cli@1.46.0 dev -u http://localhost:3000/api/inngest --no-discovery"
   },
   "dependencies": {
     "@qdrant/js-client-rest": "^1.19.0",
-    "@vercel/functions": "3.10.1",
     "cheerio": "^1.0.0",
+    "inngest": "4.25.0",
     "next": "^14.2.35",
     "next-auth": "5.0.0-beta.32",
     "openai": "^4.67.3",

@@ -1,11 +1,10 @@
-import { reindexSource } from "@/lib/ingest";
-import { setSourceStatus } from "@/lib/store";
+import { getSource, setSourceStatus } from "@/lib/store";
 import { fail, guard, isStalled, ok, sourceDto } from "@/lib/http";
 import { requireSource, requireUserId } from "@/lib/authz";
-import { runInBackground } from "@/lib/background";
+import { sourceReindexRequested } from "@/inngest/client";
+import { enqueueIndexing } from "@/inngest/publish";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
 
 export async function POST(
   _req: Request,
@@ -18,9 +17,14 @@ export async function POST(
     if (inProgress && !isStalled(existing)) {
       return fail("This source is already being indexed.", 409);
     }
+    if (!existing.segments?.length) {
+      return fail("Nothing stored to re-index. Remove and re-add the source.", 422);
+    }
     // Mark it before responding so the client's first poll already sees it.
-    await setSourceStatus(params.id, "uploading", { error: undefined });
-    runInBackground(`reindex ${params.id}`, () => reindexSource(params.id));
-    return ok(sourceDto({ ...existing, status: "uploading", error: undefined }), 202);
+    // The current generation keeps answering questions until the new one is done.
+    await setSourceStatus(params.id, "uploading", { error: undefined, progress: undefined });
+    const marked = (await getSource(params.id)) ?? existing;
+    const queued = await enqueueIndexing(sourceReindexRequested, marked);
+    return ok(sourceDto(queued), 202);
   });
 }

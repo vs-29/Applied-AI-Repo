@@ -1,5 +1,6 @@
 import { deleteChunksByNotebook } from "@/lib/qdrant";
-import { deleteNotebook, renameNotebook } from "@/lib/store";
+import { deleteNotebook, listSources, renameNotebook } from "@/lib/store";
+import { announceDeleted } from "@/inngest/publish";
 import { fail, guard, ok } from "@/lib/http";
 import { requireNotebook, requireUserId } from "@/lib/authz";
 
@@ -37,6 +38,7 @@ export async function DELETE(
   return guard(async () => {
     const userId = await requireUserId();
     await requireNotebook(params.id, userId);
+    await announceDeleted(await listSources(params.id)); // cancel in-flight runs
     await deleteChunksByNotebook(params.id);
     await deleteNotebook(params.id);
     return ok({ deleted: true });

@@ -29,6 +29,10 @@ export interface Source {
   status: IndexStatus;
   error?: string;
   chunkCount: number;
+  /** Generation of chunks currently serving queries (bumped on each re-index). */
+  generation?: number;
+  /** Embedding progress while indexing, in batches. */
+  progress?: { done: number; total: number };
   /**
    * Extracted segments (pages / cues / paragraphs) with native location
    * metadata. Retained so the Source Viewer can render and highlight cited
@@ -63,6 +67,7 @@ export interface Chunk {
   sourceTitle: string;
   origin: string;
   index: number; // ordinal position within the source
+  generation: number; // which (re-)index wrote this chunk
   text: string;
   location: ChunkLocation;
 }

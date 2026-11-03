@@ -47,16 +47,21 @@ export async function ensureCollections(): Promise<void> {
 
   await ensureIndex(config.qdrant.chunksCollection, "notebookId");
   await ensureIndex(config.qdrant.chunksCollection, "sourceId");
+  await ensureIndex(config.qdrant.chunksCollection, "generation", "integer");
   await ensureIndex(config.qdrant.entitiesCollection, "kind");
   await ensureIndex(config.qdrant.entitiesCollection, "notebookId");
   await ensureIndex(config.qdrant.entitiesCollection, "ownerId");
 }
 
-async function ensureIndex(collection: string, field: string): Promise<void> {
+async function ensureIndex(
+  collection: string,
+  field: string,
+  schema: "keyword" | "integer" = "keyword",
+): Promise<void> {
   try {
     await getQdrant().createPayloadIndex(collection, {
       field_name: field,
-      field_schema: "keyword",
+      field_schema: schema,
     });
   } catch {
     // Index already exists — safe to ignore.
@@ -165,6 +170,21 @@ export async function searchChunks(
     }));
   // Dense results come back sorted, so the first is the closest chunk overall.
   return { citations, bestDenseScore: dense.points[0]?.score ?? 0 };
+}
+
+/**
+ * Delete a source's chunks from every generation except `keep`. Chunks written
+ * before generations existed have no `generation` field, so they don't match
+ * the must_not clause and are removed too.
+ */
+export async function deleteOtherGenerations(sourceId: string, keep: number): Promise<void> {
+  await getQdrant().delete(config.qdrant.chunksCollection, {
+    wait: true,
+    filter: {
+      must: [{ key: "sourceId", match: { value: sourceId } }],
+      must_not: [{ key: "generation", match: { value: keep } }],
+    },
+  });
 }
 
 export async function deleteChunksBySource(sourceId: string): Promise<void> {

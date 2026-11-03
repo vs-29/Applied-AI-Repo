@@ -49,6 +49,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     authorized({ auth, request }) {
       const { pathname } = request.nextUrl;
       if (pathname.startsWith("/api/auth") || pathname === "/signin") return true;
+      // Called by Inngest, not by a user. The SDK verifies each request's
+      // signature with INNGEST_SIGNING_KEY instead (required in production).
+      if (pathname === "/api/inngest") return true;
       if (auth?.user) return true;
       if (pathname.startsWith("/api/")) {
         return Response.json({ error: "Sign in required." }, { status: 401 });

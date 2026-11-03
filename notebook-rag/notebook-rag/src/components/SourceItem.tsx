@@ -26,6 +26,11 @@ export function SourceItem({
               {source.chunkCount} chunks
             </span>
           )}
+          {source.status === "indexing" && source.progress && (
+            <span className="font-mono text-[10px] text-faint">
+              {source.progress.done}/{source.progress.total} batches
+            </span>
+          )}
         </div>
         {source.status === "error" && source.error && (
           <p className="mt-0.5 text-[11px] text-status-error" title={source.error}>

@@ -1,13 +1,14 @@
-import { ingestSource, type IngestInput } from "@/lib/ingest";
-import { createSource, listSources } from "@/lib/store";
+import { extractAndStore, needsFetch, type IngestInput } from "@/lib/ingest";
+import { createSource, listSources, setSourceStatus } from "@/lib/store";
 import { fail, guard, ok, sourceDto } from "@/lib/http";
 import { requireNotebook, requireUserId } from "@/lib/authz";
-import { runInBackground } from "@/lib/background";
+import { sourceAdded } from "@/inngest/client";
+import { enqueueIndexing } from "@/inngest/publish";
 import type { SourceType } from "@/lib/types";
 
 export const runtime = "nodejs";
-// Ingestion runs after the response (see runInBackground) but still counts
-// toward the function's duration on Vercel, so keep the generous limit.
+// Only file extraction happens here (PDF parsing can take a few seconds);
+// fetching and embedding run in the queue.
 export const maxDuration = 60;
 
 export async function GET(
@@ -102,10 +103,23 @@ export async function POST(
       origin,
     });
 
-    // Respond now with status "uploading"; the client polls until the source
-    // becomes "ready" or "error". The upload itself was read above, so the
-    // background work doesn't depend on the request any more.
-    runInBackground(`ingest ${source.id}`, () => ingestSource(source.id, input));
-    return ok(sourceDto(source), 202);
+    // Files are already in this request, so extract them here and store the
+    // text; the queue event then only needs the source id. URL and YouTube
+    // sources only need their link, so even fetching happens in the queue.
+    let saved = source;
+    if (!needsFetch(type)) {
+      try {
+        saved = (await extractAndStore(source, input)) ?? source;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Could not read this file.";
+        await setSourceStatus(source.id, "error", { error: message });
+        return ok(sourceDto({ ...source, status: "error", error: message }), 201);
+      }
+    }
+
+    // Respond now (status "uploading"); the client polls until the source
+    // becomes "ready" or "error" while the Inngest function does the work.
+    const queued = await enqueueIndexing(sourceAdded, saved);
+    return ok(sourceDto(queued), 202);
   });
 }
