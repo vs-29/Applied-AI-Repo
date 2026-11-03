@@ -185,9 +185,15 @@ then type out the answer.
   the whole app needs only two services (OpenAI + Qdrant). The store is isolated
   behind `src/lib/store.ts` — in production you'd swap that module for Postgres
   and keep everything else unchanged.
-- **Synchronous ingestion.** Embedding runs inside the add-source request. That's
-  simple and reliable for a demo; at scale you'd hand off to a queue
-  (QStash / Inngest) and let the client poll the status dot.
+- **Background ingestion, without a queue.** Adding or re-indexing a source
+  returns `202` immediately; extraction and embedding continue after the
+  response (`src/lib/background.ts`, using Vercel's `waitUntil`), and the UI
+  polls every 2s until the source is `ready` or `error`. A job that stops
+  updating for 10 minutes is shown as interrupted, so nothing spins forever.
+  The work still runs inside one function invocation, so on Vercel it's capped
+  by `maxDuration` (60s): fine for typical sources, not for very large PDFs or
+  long videos. The next step is a job queue (Inngest / QStash) running each
+  embedding batch as its own retried step, with uploads stored in Vercel Blob.
 - **Original files aren't stored.** The Source Viewer renders the extracted text
   (highlighted) rather than the original binary, since no blob store is
   provisioned. Adding Vercel Blob or S3 would let the PDF viewer show the real

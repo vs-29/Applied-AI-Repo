@@ -33,8 +33,31 @@ export async function guard(
   }
 }
 
+/**
+ * Background ingestion that hasn't updated its status in this long is assumed
+ * dead (server restarted, or the platform killed the function at maxDuration).
+ * Every stage of ingestion bumps updatedAt, and on Vercel a function can't run
+ * past 60s, so 10 minutes leaves a wide margin.
+ */
+const STALE_MS = 10 * 60 * 1000;
+
+/** True if the source claims to be in progress but its job has evidently died. */
+export function isStalled(source: Source): boolean {
+  return (
+    (source.status === "uploading" || source.status === "indexing") &&
+    Date.now() - source.updatedAt > STALE_MS
+  );
+}
+
 /** Strip heavy/internal fields (segments, content, ownerId) before sending a source to the UI. */
 export function sourceDto(source: Source) {
+  if (isStalled(source)) {
+    source = {
+      ...source,
+      status: "error",
+      error: "Indexing was interrupted. Re-index or remove this source.",
+    };
+  }
   const { segments: _segments, content: _content, ownerId: _ownerId, ...dto } = source;
   return dto;
 }

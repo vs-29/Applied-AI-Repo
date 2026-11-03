@@ -186,7 +186,7 @@ export function AddSourceModal({
                 disabled={!valid || submitting}
                 onClick={submit}
               >
-                {submitting ? "Indexing…" : "Add & index"}
+                {submitting ? "Uploading…" : "Add & index"}
               </button>
             </div>
           </div>

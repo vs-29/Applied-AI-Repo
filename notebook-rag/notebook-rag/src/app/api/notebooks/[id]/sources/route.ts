@@ -1,11 +1,13 @@
 import { ingestSource, type IngestInput } from "@/lib/ingest";
-import { createSource, getSource, listSources } from "@/lib/store";
+import { createSource, listSources } from "@/lib/store";
 import { fail, guard, ok, sourceDto } from "@/lib/http";
 import { requireNotebook, requireUserId } from "@/lib/authz";
+import { runInBackground } from "@/lib/background";
 import type { SourceType } from "@/lib/types";
 
 export const runtime = "nodejs";
-// Ingestion (extract → embed) runs inline; give it room on platforms that allow it.
+// Ingestion runs after the response (see runInBackground) but still counts
+// toward the function's duration on Vercel, so keep the generous limit.
 export const maxDuration = 60;
 
 export async function GET(
@@ -100,8 +102,10 @@ export async function POST(
       origin,
     });
 
-    await ingestSource(source.id, input);
-    const finished = await getSource(source.id);
-    return ok(sourceDto(finished ?? source), 201);
+    // Respond now with status "uploading"; the client polls until the source
+    // becomes "ready" or "error". The upload itself was read above, so the
+    // background work doesn't depend on the request any more.
+    runInBackground(`ingest ${source.id}`, () => ingestSource(source.id, input));
+    return ok(sourceDto(source), 202);
   });
 }

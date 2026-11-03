@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatPanel } from "@/components/ChatPanel";
 import { SourceViewer } from "@/components/SourceViewer";
@@ -56,6 +56,36 @@ export default function Home() {
       .finally(() => setSourcesLoading(false));
   }, [activeId]);
 
+  // Ids of optimistic placeholders whose upload request hasn't returned yet;
+  // polling must not drop them, since the server doesn't know them.
+  const placeholders = useRef(new Set<string>());
+  const activeIdRef = useRef(activeId);
+  activeIdRef.current = activeId;
+
+  // Ingestion runs in the background on the server, so while any source is
+  // uploading/indexing, refresh this notebook's sources every 2 seconds.
+  // The effect re-runs (and stops) once nothing is pending.
+  const pending = sources.some(
+    (s) => s.status === "uploading" || s.status === "indexing",
+  );
+  useEffect(() => {
+    if (!activeId || !pending) return;
+    const notebookId = activeId;
+    const timer = setInterval(async () => {
+      try {
+        const fresh = await api.listSources(notebookId);
+        if (activeIdRef.current !== notebookId) return; // switched notebooks
+        setSources((prev) => [
+          ...fresh,
+          ...prev.filter((s) => placeholders.current.has(s.id)),
+        ]);
+      } catch {
+        /* transient; try again on the next tick */
+      }
+    }, 2000);
+    return () => clearInterval(timer);
+  }, [activeId, pending]);
+
   const patchSource = (s: SourceDTO) =>
     setSources((prev) => prev.map((x) => (x.id === s.id ? s : x)));
 
@@ -96,18 +126,26 @@ export default function Home() {
         type: (form.get("type") as SourceDTO["type"]) ?? "text",
         title: fileLabel(form),
         origin: "",
-        status: "indexing",
+        status: "uploading",
         chunkCount: 0,
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
+      placeholders.current.add(tempId);
       setSources((prev) => [...prev, optimistic]);
       try {
+        // Returns as soon as the upload is accepted (202, status "uploading");
+        // the polling effect above then tracks it to "ready" or "error".
         const created = await api.addSource(activeId, form);
-        setSources((prev) => prev.map((s) => (s.id === tempId ? created : s)));
+        setSources((prev) => [
+          ...prev.filter((s) => s.id !== tempId && s.id !== created.id),
+          created,
+        ]);
       } catch (e) {
         setSources((prev) => prev.filter((s) => s.id !== tempId));
         throw e;
+      } finally {
+        placeholders.current.delete(tempId);
       }
     },
     [activeId],
@@ -128,16 +166,16 @@ export default function Home() {
 
   const reindexSource = useCallback(async (id: string) => {
     setSources((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, status: "indexing" } : s)),
+      prev.map((s) => (s.id === id ? { ...s, status: "uploading", error: undefined } : s)),
     );
     try {
+      // Returns immediately (202); polling picks up the final status.
       const updated = await api.reindexSource(id);
       patchSource(updated);
-    } catch {
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Re-index failed.";
       setSources((prev) =>
-        prev.map((s) =>
-          s.id === id ? { ...s, status: "error", error: "Re-index failed." } : s,
-        ),
+        prev.map((s) => (s.id === id ? { ...s, status: "error", error: message } : s)),
       );
     }
   }, []);
