@@ -125,7 +125,9 @@ AUTH_GITHUB_SECRET=...
 
 For GitHub sign-in, create an OAuth app at <https://github.com/settings/developers>
 with callback URL `http://localhost:3000/api/auth/callback/github` (and a second
-app, or an updated URL, for your deployed domain).
+app, or an updated URL, for your deployed domain). Google sign-in is optional:
+set `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` (see `.env.example`) and the button
+appears. GitHub and Google logins are separate accounts (no account linking).
 
 Sensible defaults are applied for models, collection names, chunk size/overlap
 (1100 / 180 chars), and retrieval depth (top-k = 6).
@@ -178,7 +180,7 @@ then type out the answer.
   (highlighted) rather than the original binary, since no blob store is
   provisioned. Adding Vercel Blob or S3 would let the PDF viewer show the real
   page image.
-- **Auth via GitHub sign-in, JWT sessions.** Auth.js (`src/auth.ts`) issues a
+- **Auth via GitHub or Google sign-in, JWT sessions.** Auth.js (`src/auth.ts`) issues a
   signed cookie; there's no user table. Every notebook and source records an
   `ownerId`, and every API route checks it (`src/lib/authz.ts`) before reading
   or writing. Retrieval stays filtered by `notebookId`, and a user can only

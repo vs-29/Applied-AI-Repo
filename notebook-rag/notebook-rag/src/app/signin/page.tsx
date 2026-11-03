@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth, signIn } from "@/auth";
+import { auth, signIn, signInOptions } from "@/auth";
 
 export const metadata = { title: "Sign in — Notebook RAG" };
 
@@ -40,17 +40,21 @@ export default async function SignInPage({
           </p>
         )}
 
-        <form
-          className="mt-6"
-          action={async () => {
-            "use server";
-            await signIn("github", { redirectTo: target });
-          }}
-        >
-          <button type="submit" className="btn-primary w-full">
-            Continue with GitHub
-          </button>
-        </form>
+        <div className="mt-6 space-y-2">
+          {signInOptions.map((option) => (
+            <form
+              key={option.id}
+              action={async () => {
+                "use server";
+                await signIn(option.id, { redirectTo: target });
+              }}
+            >
+              <button type="submit" className="btn-primary w-full">
+                {option.label}
+              </button>
+            </form>
+          ))}
+        </div>
       </div>
     </main>
   );
