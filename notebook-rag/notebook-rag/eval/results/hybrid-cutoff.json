@@ -1,0 +1,429 @@
+{
+  "label": "hybrid-cutoff",
+  "date": "2026-11-03T17:55:24.130Z",
+  "settings": {
+    "embedModel": "text-embedding-3-small",
+    "chunkSize": 1100,
+    "chunkOverlap": 180,
+    "topK": 6,
+    "minScore": 0.16,
+    "collection": "notebook_chunks_hybrid"
+  },
+  "summary": {
+    "exact": {
+      "n": 12,
+      "hit1": 9,
+      "hit3": 12,
+      "hitK": 12,
+      "mrr": 0.875
+    },
+    "paraphrase": {
+      "n": 12,
+      "hit1": 11,
+      "hit3": 12,
+      "hitK": 12,
+      "mrr": 0.9583333333333334
+    },
+    "all": {
+      "n": 24,
+      "hit1": 20,
+      "hit3": 24,
+      "hitK": 24,
+      "mrr": 0.9166666666666666
+    }
+  },
+  "cutoffSweep": [
+    {
+      "cutoff": 0,
+      "refusedOff": 0,
+      "falseRefusals": 0,
+      "foundInK": 24
+    },
+    {
+      "cutoff": 0.1,
+      "refusedOff": 2,
+      "falseRefusals": 0,
+      "foundInK": 24
+    },
+    {
+      "cutoff": 0.12,
+      "refusedOff": 4,
+      "falseRefusals": 0,
+      "foundInK": 24
+    },
+    {
+      "cutoff": 0.14,
+      "refusedOff": 6,
+      "falseRefusals": 0,
+      "foundInK": 24
+    },
+    {
+      "cutoff": 0.15,
+      "refusedOff": 8,
+      "falseRefusals": 0,
+      "foundInK": 24
+    },
+    {
+      "cutoff": 0.16,
+      "refusedOff": 10,
+      "falseRefusals": 0,
+      "foundInK": 24
+    },
+    {
+      "cutoff": 0.17,
+      "refusedOff": 10,
+      "falseRefusals": 0,
+      "foundInK": 24
+    },
+    {
+      "cutoff": 0.18,
+      "refusedOff": 11,
+      "falseRefusals": 0,
+      "foundInK": 23
+    },
+    {
+      "cutoff": 0.2,
+      "refusedOff": 11,
+      "falseRefusals": 0,
+      "foundInK": 23
+    },
+    {
+      "cutoff": 0.22,
+      "refusedOff": 11,
+      "falseRefusals": 1,
+      "foundInK": 23
+    },
+    {
+      "cutoff": 0.25,
+      "refusedOff": 11,
+      "falseRefusals": 1,
+      "foundInK": 23
+    }
+  ],
+  "rows": [
+    {
+      "id": "e01",
+      "kind": "exact",
+      "question": "Which bug was KST-1187?",
+      "rank": 2,
+      "refused": false,
+      "bestDense": 0.41056955,
+      "keywordHits": 5
+    },
+    {
+      "id": "e02",
+      "kind": "exact",
+      "question": "What does error KST-1302 mean?",
+      "rank": 2,
+      "refused": false,
+      "bestDense": 0.39177805,
+      "keywordHits": 7
+    },
+    {
+      "id": "e03",
+      "kind": "exact",
+      "question": "How was KST-1450 fixed?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.36829507,
+      "keywordHits": 5
+    },
+    {
+      "id": "e04",
+      "kind": "exact",
+      "question": "What is state-v2.json?",
+      "rank": 2,
+      "refused": false,
+      "bestDense": 0.3163597,
+      "keywordHits": 4
+    },
+    {
+      "id": "e05",
+      "kind": "exact",
+      "question": "Why was --legacy-auth removed?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.5362907,
+      "keywordHits": 3
+    },
+    {
+      "id": "e06",
+      "kind": "exact",
+      "question": "What exit code does kestrel verify return on a mismatch?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.50757,
+      "keywordHits": 9
+    },
+    {
+      "id": "e07",
+      "kind": "exact",
+      "question": "What is Policy RW-204 about?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.38090163,
+      "keywordHits": 3
+    },
+    {
+      "id": "e08",
+      "kind": "exact",
+      "question": "When do I use the code SEC-LOST?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.2685424,
+      "keywordHits": 7
+    },
+    {
+      "id": "e09",
+      "kind": "exact",
+      "question": "What is the hotel limit in Tier B cities?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.5109924,
+      "keywordHits": 3
+    },
+    {
+      "id": "e10",
+      "kind": "exact",
+      "question": "What does EV-310 allow?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.20865345,
+      "keywordHits": 1
+    },
+    {
+      "id": "e11",
+      "kind": "exact",
+      "question": "What does HNSW stand for?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.27388716,
+      "keywordHits": 2
+    },
+    {
+      "id": "e12",
+      "kind": "exact",
+      "question": "What does the ef parameter control?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.26177993,
+      "keywordHits": 3
+    },
+    {
+      "id": "p01",
+      "kind": "paraphrase",
+      "question": "How long do I have to submit a claim for money I spent on a work trip?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.4609735,
+      "keywordHits": 7
+    },
+    {
+      "id": "p02",
+      "kind": "paraphrase",
+      "question": "Am I allowed to fly in the most expensive cabin for a long-haul trip?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.48203886,
+      "keywordHits": 7
+    },
+    {
+      "id": "p03",
+      "kind": "paraphrase",
+      "question": "How much unused vacation can I keep for next year?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.36297268,
+      "keywordHits": 9
+    },
+    {
+      "id": "p04",
+      "kind": "paraphrase",
+      "question": "What extra pay do engineers get for being reachable for emergencies?",
+      "rank": 2,
+      "refused": false,
+      "bestDense": 0.48379785,
+      "keywordHits": 2
+    },
+    {
+      "id": "p05",
+      "kind": "paraphrase",
+      "question": "Why do stressed reefs lose their colour?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.6970217,
+      "keywordHits": 4
+    },
+    {
+      "id": "p06",
+      "kind": "paraphrase",
+      "question": "Where does a coral get most of its nutrition?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.5652015,
+      "keywordHits": 4
+    },
+    {
+      "id": "p07",
+      "kind": "paraphrase",
+      "question": "How do researchers quantify the build-up of heat stress on a reef?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.5627316,
+      "keywordHits": 9
+    },
+    {
+      "id": "p08",
+      "kind": "paraphrase",
+      "question": "How many years does a reef need to bounce back?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.63619256,
+      "keywordHits": 7
+    },
+    {
+      "id": "p09",
+      "kind": "paraphrase",
+      "question": "What goes wrong if each piece of a document is too big?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.3507495,
+      "keywordHits": 1
+    },
+    {
+      "id": "p10",
+      "kind": "paraphrase",
+      "question": "Why does semantic search struggle with serial numbers and identifiers?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.39498955,
+      "keywordHits": 3
+    },
+    {
+      "id": "p11",
+      "kind": "paraphrase",
+      "question": "How do I get the older, previous compression for columnar output files?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.28588623,
+      "keywordHits": 6
+    },
+    {
+      "id": "p12",
+      "kind": "paraphrase",
+      "question": "Which release stopped working on old interpreter versions?",
+      "rank": 1,
+      "refused": false,
+      "bestDense": 0.32888657,
+      "keywordHits": 10
+    },
+    {
+      "id": "o01",
+      "kind": "offtopic",
+      "question": "What is the capital of Australia?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.14308111,
+      "keywordHits": 0
+    },
+    {
+      "id": "o02",
+      "kind": "offtopic",
+      "question": "How do I bake sourdough bread at home?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.085550554,
+      "keywordHits": 0
+    },
+    {
+      "id": "o03",
+      "kind": "offtopic",
+      "question": "Who won the 2018 football World Cup?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.065783806,
+      "keywordHits": 1
+    },
+    {
+      "id": "o04",
+      "kind": "offtopic",
+      "question": "What is the boiling point of mercury?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.107001245,
+      "keywordHits": 2
+    },
+    {
+      "id": "o05",
+      "kind": "offtopic",
+      "question": "How do I reset my home wifi router password?",
+      "rank": null,
+      "refused": false,
+      "bestDense": 0.17193258,
+      "keywordHits": 2
+    },
+    {
+      "id": "o06",
+      "kind": "offtopic",
+      "question": "What are the symptoms of seasonal flu?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.15724525,
+      "keywordHits": 0
+    },
+    {
+      "id": "o07",
+      "kind": "offtopic",
+      "question": "How much does a train ticket from Lisbon to Porto cost?",
+      "rank": null,
+      "refused": false,
+      "bestDense": 0.3068217,
+      "keywordHits": 6
+    },
+    {
+      "id": "o08",
+      "kind": "offtopic",
+      "question": "Write a short poem about autumn leaves.",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.14025313,
+      "keywordHits": 2
+    },
+    {
+      "id": "o09",
+      "kind": "offtopic",
+      "question": "Which planets in our solar system have rings?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.10451922,
+      "keywordHits": 0
+    },
+    {
+      "id": "o10",
+      "kind": "offtopic",
+      "question": "What is the best way to learn the guitar as an adult?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.13489085,
+      "keywordHits": 1
+    },
+    {
+      "id": "o11",
+      "kind": "offtopic",
+      "question": "How do I install Python packages with pip?",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.12230549,
+      "keywordHits": 2
+    },
+    {
+      "id": "o12",
+      "kind": "offtopic",
+      "question": "Explain how a car engine turbocharger works.",
+      "rank": null,
+      "refused": true,
+      "bestDense": 0.15103382,
+      "keywordHits": 3
+    }
+  ]
+}

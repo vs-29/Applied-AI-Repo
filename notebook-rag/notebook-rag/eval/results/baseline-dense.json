@@ -1,0 +1,288 @@
+{
+  "label": "baseline-dense",
+  "date": "2026-11-03T17:35:55.451Z",
+  "settings": {
+    "embedModel": "text-embedding-3-small",
+    "chunkSize": 1100,
+    "chunkOverlap": 180,
+    "topK": 6,
+    "collection": "notebook_chunks"
+  },
+  "summary": {
+    "exact": {
+      "n": 12,
+      "hit1": 8,
+      "hit3": 11,
+      "hitK": 12,
+      "mrr": 0.7777777777777777
+    },
+    "paraphrase": {
+      "n": 12,
+      "hit1": 10,
+      "hit3": 12,
+      "hitK": 12,
+      "mrr": 0.9166666666666666
+    },
+    "all": {
+      "n": 24,
+      "hit1": 18,
+      "hit3": 23,
+      "hitK": 24,
+      "mrr": 0.8472222222222222
+    }
+  },
+  "rows": [
+    {
+      "id": "e01",
+      "kind": "exact",
+      "question": "Which bug was KST-1187?",
+      "rank": 2,
+      "topScore": 0.41039246,
+      "hitScore": 0.32280338,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "e02",
+      "kind": "exact",
+      "question": "What does error KST-1302 mean?",
+      "rank": 3,
+      "topScore": 0.3918182,
+      "hitScore": 0.2970463,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "e03",
+      "kind": "exact",
+      "question": "How was KST-1450 fixed?",
+      "rank": 1,
+      "topScore": 0.36891967,
+      "hitScore": 0.36891967,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "e04",
+      "kind": "exact",
+      "question": "What is state-v2.json?",
+      "rank": 3,
+      "topScore": 0.3162686,
+      "hitScore": 0.28217083,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "e05",
+      "kind": "exact",
+      "question": "Why was --legacy-auth removed?",
+      "rank": 1,
+      "topScore": 0.5362694,
+      "hitScore": 0.5362694,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "e06",
+      "kind": "exact",
+      "question": "What exit code does kestrel verify return on a mismatch?",
+      "rank": 1,
+      "topScore": 0.50750345,
+      "hitScore": 0.50750345,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "e07",
+      "kind": "exact",
+      "question": "What is Policy RW-204 about?",
+      "rank": 1,
+      "topScore": 0.38088056,
+      "hitScore": 0.38088056,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "e08",
+      "kind": "exact",
+      "question": "When do I use the code SEC-LOST?",
+      "rank": 1,
+      "topScore": 0.26856685,
+      "hitScore": 0.26856685,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "e09",
+      "kind": "exact",
+      "question": "What is the hotel limit in Tier B cities?",
+      "rank": 1,
+      "topScore": 0.510894,
+      "hitScore": 0.510894,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "e10",
+      "kind": "exact",
+      "question": "What does EV-310 allow?",
+      "rank": 6,
+      "topScore": 0.20865977,
+      "hitScore": 0.17976928,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "e11",
+      "kind": "exact",
+      "question": "What does HNSW stand for?",
+      "rank": 1,
+      "topScore": 0.27388716,
+      "hitScore": 0.27388716,
+      "topSource": "vector-search-lecture.vtt"
+    },
+    {
+      "id": "e12",
+      "kind": "exact",
+      "question": "What does the ef parameter control?",
+      "rank": 1,
+      "topScore": 0.2617909,
+      "hitScore": 0.2617909,
+      "topSource": "vector-search-lecture.vtt"
+    },
+    {
+      "id": "p01",
+      "kind": "paraphrase",
+      "question": "How long do I have to submit a claim for money I spent on a work trip?",
+      "rank": 1,
+      "topScore": 0.4608276,
+      "hitScore": 0.4608276,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "p02",
+      "kind": "paraphrase",
+      "question": "Am I allowed to fly in the most expensive cabin for a long-haul trip?",
+      "rank": 1,
+      "topScore": 0.48206532,
+      "hitScore": 0.48206532,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "p03",
+      "kind": "paraphrase",
+      "question": "How much unused vacation can I keep for next year?",
+      "rank": 1,
+      "topScore": 0.36292374,
+      "hitScore": 0.36292374,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "p04",
+      "kind": "paraphrase",
+      "question": "What extra pay do engineers get for being reachable for emergencies?",
+      "rank": 1,
+      "topScore": 0.4837379,
+      "hitScore": 0.4837379,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "p05",
+      "kind": "paraphrase",
+      "question": "Why do stressed reefs lose their colour?",
+      "rank": 1,
+      "topScore": 0.6970217,
+      "hitScore": 0.6970217,
+      "topSource": "coral-bleaching.txt"
+    },
+    {
+      "id": "p06",
+      "kind": "paraphrase",
+      "question": "Where does a coral get most of its nutrition?",
+      "rank": 1,
+      "topScore": 0.5652015,
+      "hitScore": 0.5652015,
+      "topSource": "coral-bleaching.txt"
+    },
+    {
+      "id": "p07",
+      "kind": "paraphrase",
+      "question": "How do researchers quantify the build-up of heat stress on a reef?",
+      "rank": 1,
+      "topScore": 0.5627316,
+      "hitScore": 0.5627316,
+      "topSource": "coral-bleaching.txt"
+    },
+    {
+      "id": "p08",
+      "kind": "paraphrase",
+      "question": "How many years does a reef need to bounce back?",
+      "rank": 2,
+      "topScore": 0.63607526,
+      "hitScore": 0.562685,
+      "topSource": "coral-bleaching.txt"
+    },
+    {
+      "id": "p09",
+      "kind": "paraphrase",
+      "question": "What goes wrong if each piece of a document is too big?",
+      "rank": 1,
+      "topScore": 0.3507495,
+      "hitScore": 0.3507495,
+      "topSource": "vector-search-lecture.vtt"
+    },
+    {
+      "id": "p10",
+      "kind": "paraphrase",
+      "question": "Why does semantic search struggle with serial numbers and identifiers?",
+      "rank": 1,
+      "topScore": 0.39498955,
+      "hitScore": 0.39498955,
+      "topSource": "vector-search-lecture.vtt"
+    },
+    {
+      "id": "p11",
+      "kind": "paraphrase",
+      "question": "How do I get the older, previous compression for columnar output files?",
+      "rank": 1,
+      "topScore": 0.28581673,
+      "hitScore": 0.28581673,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "p12",
+      "kind": "paraphrase",
+      "question": "Which release stopped working on old interpreter versions?",
+      "rank": 2,
+      "topScore": 0.32918245,
+      "hitScore": 0.2843169,
+      "topSource": "kestrel-release-notes.txt"
+    },
+    {
+      "id": "o01",
+      "kind": "offtopic",
+      "question": "What is the capital of Australia?",
+      "rank": null,
+      "topScore": 0.14310265,
+      "hitScore": null,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "o02",
+      "kind": "offtopic",
+      "question": "How do I bake sourdough bread at home?",
+      "rank": null,
+      "topScore": 0.08556704,
+      "hitScore": null,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "o03",
+      "kind": "offtopic",
+      "question": "Who won the 2018 football World Cup?",
+      "rank": null,
+      "topScore": 0.06578497,
+      "hitScore": null,
+      "topSource": "lumen-handbook.txt"
+    },
+    {
+      "id": "o04",
+      "kind": "offtopic",
+      "question": "What is the boiling point of mercury?",
+      "rank": null,
+      "topScore": 0.107001245,
+      "hitScore": null,
+      "topSource": "coral-bleaching.txt"
+    }
+  ]
+}

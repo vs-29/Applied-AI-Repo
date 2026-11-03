@@ -39,8 +39,14 @@ export const config = {
     get apiKey(): string | undefined {
       return process.env.QDRANT_API_KEY || undefined;
     },
+    /**
+     * Chunks live in "<base>_hybrid": that collection stores two named vectors
+     * per chunk (dense + bm25), a layout the original single-vector collection
+     * can't hold. Run `npm run reindex:all` once to fill it from the stored
+     * extractions; the old "<base>" collection can then be deleted.
+     */
     get chunksCollection() {
-      return process.env.QDRANT_CHUNKS_COLLECTION || "notebook_chunks";
+      return `${process.env.QDRANT_CHUNKS_COLLECTION || "notebook_chunks"}_hybrid`;
     },
     get entitiesCollection() {
       return process.env.QDRANT_ENTITIES_COLLECTION || "notebook_entities";
@@ -58,6 +64,15 @@ export const config = {
     },
     get topK() {
       return num("RETRIEVAL_TOP_K", 6);
+    },
+    /**
+     * Minimum dense (cosine) similarity for a chunk to count as relevant; see
+     * retrieve.ts. Specific to the embedding model (text-embedding-3-small
+     * scores are low in absolute terms), so re-tune with `npm run eval` if the
+     * model changes. 0 disables the cutoff.
+     */
+    get minScore() {
+      return num("RETRIEVAL_MIN_SCORE", 0.16);
     },
   },
 };

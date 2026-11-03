@@ -23,13 +23,19 @@ pipeline, and it deploys to Vercel as-is.
   - **VTT / transcript** — WebVTT and SRT timings parsed into timestamped cues.
   - **Text** — pasted notes split into paragraphs.
 - **RAG pipeline** — extract → chunk (overlapping, whitespace-aligned) → embed →
-  store in Qdrant → retrieve top-k by cosine similarity → generate a grounded
-  answer.
+  store in Qdrant → retrieve top-k with **hybrid search** (meaning + keywords,
+  merged by reciprocal rank fusion) → generate a grounded answer.
+- **Retrieval evaluation** — a fixed test corpus and 28 questions
+  (`npm run eval`) measure whether the right passage is retrieved, so retrieval
+  changes are judged by numbers, not by eye.
 - **Inspectable citations** — the model cites sources inline as `[1] [2]`. Each
   chip opens the **Source Viewer**, which renders the original and highlights the
   cited passage (or seeks the video to the cited timestamp).
-- **Grounding guardrail** — if retrieval returns nothing relevant, the app says
-  so instead of inventing an answer.
+- **Grounding guardrail** — two layers. A relevance cutoff
+  (`RETRIEVAL_MIN_SCORE`, tuned on the eval set) refuses questions the sources
+  clearly don't cover and drops weakly related chunks; for questions that are
+  on-topic but unanswered, the prompt makes the model say so instead of
+  inventing an answer.
 - **Live status** — every source shows an indexing state (a pulsing amber dot
   while embedding, green when ready), and answers stream token by token.
 
@@ -57,19 +63,25 @@ pipeline, and it deploys to Vercel as-is.
         │ embeddings + chat             │ vectors + metadata
         ▼                               ▼
    OpenAI API                      Qdrant Cloud
-   text-embedding-3-small          notebook_chunks  (1536-d vectors)
+   text-embedding-3-small          notebook_chunks_hybrid (1536-d dense + BM25 sparse)
    gpt-4o-mini (stream)            notebook_entities (notebooks + sources)
 ```
 
 ### Retrieval flow (a single question)
 
-1. The question is embedded with the same model used for chunks.
-2. Qdrant runs a cosine search over `notebook_chunks`, **filtered by
-   `notebookId`** — this is what enforces notebook isolation.
-3. The top-k chunks become numbered context in the prompt, each labelled with its
+1. The question is embedded with the same model used for chunks, and also
+   turned into a keyword vector (`src/lib/sparse.ts`; identifiers like
+   `KST-1187` or `state-v2.json` are kept whole).
+2. Qdrant runs two searches over `notebook_chunks_hybrid`, both **filtered by
+   `notebookId`** (this is what enforces notebook isolation): a cosine search on
+   the dense vectors, and a BM25 search on the keyword vectors.
+3. The two rankings are merged with reciprocal rank fusion (each chunk scores
+   `Σ 1/(60 + rank)`), so a chunk near the top of both lists wins. Dense search
+   handles paraphrase; keyword search catches exact codes, names and numbers.
+4. The top-k chunks become numbered context in the prompt, each labelled with its
    source title and location (page / timestamp / section).
-4. `gpt-4o-mini` streams an answer constrained to that context, citing `[n]`.
-5. The server sends the citations first, then streams answer tokens; the client
+5. `gpt-4o-mini` streams an answer constrained to that context, citing `[n]`.
+6. The server sends the citations first, then streams answer tokens; the client
    renders clickable chips that map each `[n]` back to its chunk and open the
    Source Viewer at the right spot.
 
@@ -192,6 +204,12 @@ then type out the answer.
 - YouTube ingestion depends on a video having captions available.
 - Scanned/image-only PDFs won't extract (no OCR).
 - Web extraction is heuristic; unusual page structures may capture less text.
+- The relevance cutoff only catches clearly off-topic questions. A question
+  that shares a topic with the sources but isn't answered by them (e.g. train
+  fares to a city the handbook mentions) passes the cutoff, and relies on the
+  model following the "say so if the sources don't contain it" rule.
+- The cutoff is tuned on a small eval set (36 questions) and is specific to the
+  embedding model; re-run `npm run eval` after changing either.
 
 ---
 
@@ -224,4 +242,6 @@ npm run build        # production build
 npm run start        # run the production build
 npm run typecheck    # tsc --noEmit
 npm run init:qdrant  # create Qdrant collections + payload indexes
+npm run reindex:all  # re-chunk + re-embed every source (after a layout/model change)
+npm run eval         # score retrieval on eval/ (add --label <name>, --reset)
 ```

@@ -137,6 +137,13 @@ export async function listSources(notebookId: string): Promise<Source[]> {
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
+/** Every source across all users. For maintenance scripts only, never API routes. */
+export async function listAllSources(): Promise<Source[]> {
+  await ensureCollections();
+  const items = await scrollByKind<Source & { kind: string }>("source");
+  return items.map(({ kind: _kind, ...s }) => s as Source);
+}
+
 export async function getSource(id: string): Promise<Source | null> {
   const rec = await getById<(Source & { kind: string }) | null>(id);
   if (!rec || rec.kind !== "source") return null;

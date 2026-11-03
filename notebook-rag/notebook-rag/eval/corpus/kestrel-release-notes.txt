@@ -1,0 +1,61 @@
+Kestrel CLI release notes (fictional, for retrieval evaluation)
+
+Kestrel is a command-line tool for moving data between object storage and analytics warehouses. These notes cover versions 2.3 through 2.7. Each release lists new features, behaviour changes and fixed bugs.
+
+Kestrel 2.3.0
+
+New: the kestrel sync command can now read from Azure Blob Storage in addition to S3 and Google Cloud Storage. Authentication uses the standard AZURE_STORAGE_CONNECTION_STRING environment variable.
+
+New: the --dry-run flag prints every file that would be copied without copying anything. It works with sync, copy and prune.
+
+Changed: the default number of parallel transfers was raised from 4 to 8. Use --parallel to override it.
+
+Fixed: error KST-1021, "manifest checksum mismatch", no longer appears when a source file is modified during a transfer. Kestrel now retries the file once and only reports the error if the second attempt also fails.
+
+Kestrel 2.4.0
+
+New: incremental mode. With --incremental, Kestrel records the last successful run in a state file and only transfers files whose modification time is newer. The state file is stored at .kestrel/state.json in the working directory unless --state-path is given.
+
+New: Parquet output. The --format parquet option converts CSV input to Parquet during transfer, using Snappy compression by default.
+
+Changed: logs are now written as JSON lines when stdout is not a terminal. Set KESTREL_LOG_FORMAT=text to keep the old plain-text format.
+
+Fixed: error KST-1187, which caused Kestrel to hang forever when a warehouse connection was dropped by a firewall. Connections now time out after 120 seconds of inactivity.
+
+Kestrel 2.5.0
+
+New: the kestrel verify command compares row counts and column checksums between a source file and the table it was loaded into, and exits with code 3 if they differ.
+
+Changed: Python 3.8 is no longer supported. Kestrel 2.5 requires Python 3.10 or newer.
+
+Changed: the --parallel default was lowered from 8 back to 6 after reports of rate limiting on Google Cloud Storage.
+
+Fixed: error KST-1021 could still appear on Windows because of how file locks were handled. This is now fixed on all platforms.
+
+Fixed: --dry-run with prune previously deleted empty directories even though it was a dry run. It now deletes nothing.
+
+Kestrel 2.6.0
+
+New: column mapping files. A YAML file passed with --mapping renames, drops or casts columns while loading. Unknown columns are kept unless strict: true is set in the mapping file.
+
+New: Snowflake is supported as a destination warehouse, alongside BigQuery, Redshift and Postgres.
+
+Changed: the state file used by incremental mode moved from .kestrel/state.json to .kestrel/state-v2.json, and its format changed. Kestrel converts the old file automatically on first run and keeps a backup named state.json.bak.
+
+Deprecated: the --legacy-auth flag. It will be removed in 3.0. Use profile-based authentication with kestrel login instead.
+
+Fixed: error KST-1302, "unsupported timestamp precision", when loading nanosecond timestamps into BigQuery. Timestamps are now truncated to microseconds with a warning.
+
+Kestrel 2.7.0
+
+New: resumable transfers. If a transfer of a single large file is interrupted, rerunning the same command resumes from the last completed 64 MB part instead of starting again.
+
+New: the kestrel doctor command checks credentials, network access to each configured warehouse, and the state file, and prints suggested fixes.
+
+Changed: the minimum supported Snowflake connector version is now 3.6.
+
+Changed: the default Parquet compression changed from Snappy to Zstandard, which produces files about 20 percent smaller in our benchmarks. Use --compression snappy to keep the previous behaviour.
+
+Removed: the --legacy-auth flag was removed earlier than planned because of a security issue in the old token format.
+
+Fixed: error KST-1450, where kestrel verify reported false mismatches for floating-point columns. Floating-point checksums now round to 9 significant digits before comparing.

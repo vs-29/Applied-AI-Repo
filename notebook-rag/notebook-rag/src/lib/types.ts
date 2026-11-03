@@ -67,9 +67,14 @@ export interface Chunk {
   location: ChunkLocation;
 }
 
-/** A retrieved chunk plus its similarity score, surfaced as a citation. */
+/** A retrieved chunk plus its retrieval scores, surfaced as a citation. */
 export interface Citation extends Chunk {
+  /** Hybrid rank-fusion score (only meaningful for ordering). */
   score: number;
+  /** Cosine similarity from the dense search; null if found only by keywords. */
+  denseScore: number | null;
+  /** BM25 score from the keyword search; null if no query term matched. */
+  keywordScore: number | null;
 }
 
 /** Result of extracting a source before chunking. */

@@ -1,0 +1,43 @@
+Lumen Robotics Employee Handbook (fictional, for retrieval evaluation)
+
+Section 1. About this handbook
+
+This handbook describes how Lumen Robotics works day to day. It applies to all full-time and part-time employees in the Pune, Lisbon and Toronto offices. Contractors follow the separate Contractor Guide unless a section below says otherwise. Where a local law gives employees more than this handbook does, the local law wins. Questions about any policy go to the People Operations team through the #ask-people channel.
+
+Section 2. Working hours and remote work
+
+Core collaboration hours are 11:00 to 15:00 in each office's local time. Outside core hours, employees choose their own schedule as long as their team's commitments are met. Employees may work remotely up to three days per week without approval. Working fully remote for longer than 30 consecutive days requires written approval from both the employee's manager and People Operations, because it can affect tax residency. Working from another country for any length of time is governed by Policy RW-204, and requests must be filed at least 21 days before travel.
+
+Section 3. Travel policy (Policy TR-118)
+
+All business travel must be booked through the internal travel portal, Compass. Bookings made outside Compass are reimbursed only if they cost at least 15 percent less than the cheapest equivalent Compass option, and a screenshot of the Compass price must be attached.
+
+Flights under six hours are booked in economy class. Flights of six hours or longer may be booked in premium economy. Business class is allowed only for flights longer than ten hours and only with Vice President approval recorded in Compass before booking.
+
+Hotel nightly limits depend on the city tier. Tier A cities (for example London, New York, Zurich) have a limit of 260 euros per night. Tier B cities (for example Lisbon, Toronto, Berlin) have a limit of 180 euros per night. All other cities are Tier C, with a limit of 120 euros per night. The limit includes taxes but excludes breakfast.
+
+Section 4. Expenses and reimbursement
+
+Expense claims are filed in the Ledgerly app within 45 days of the expense date. Claims filed after 45 days require a written explanation and director sign-off, and claims older than 90 days are not reimbursed.
+
+The daily meal allowance while travelling is 55 euros, regardless of city tier. Alcohol is never reimbursable, except at client events pre-approved under Policy EV-310. Receipts are required for every item above 25 euros; items below 25 euros may be claimed with a short written description instead of a receipt.
+
+Approved claims are paid with the next monthly payroll run, which closes on the 20th of each month. A claim approved on the 21st is therefore paid in the following month's payroll.
+
+Section 5. Leave
+
+Employees receive 24 days of paid annual leave per calendar year, plus the public holidays of their office location. Up to 5 unused days may be carried over into the first quarter of the next year; carried-over days that are not used by 31 March expire.
+
+Sick leave is not capped. For absences longer than three consecutive working days, a medical certificate must be uploaded to the HR portal. Parental leave is 20 weeks at full pay for the primary caregiver and 8 weeks at full pay for the secondary caregiver, and may be taken any time within the first 18 months after a birth or adoption.
+
+Section 6. Equipment and security
+
+New employees receive a laptop on their first day. Laptops are refreshed every 36 months, or earlier if a repair would cost more than half the price of a replacement. Personal devices may be used for chat and email only after enrolling in device management and enabling full-disk encryption.
+
+Passwords must be at least 14 characters long and are stored in the company password manager. Multi-factor authentication is mandatory for every company account. Hardware security keys are required for anyone with production access. Lost or stolen devices must be reported to the security team within 2 hours of discovery by paging the on-call engineer with the code SEC-LOST.
+
+Section 7. On-call and incident response
+
+Engineering teams that own production services run a weekly on-call rotation that starts every Tuesday at 10:00 local time. Each shift is staffed by a primary and a secondary engineer. The primary must acknowledge a page within 10 minutes; if they do not, the page escalates to the secondary automatically, and after a further 15 minutes to the engineering manager.
+
+Every on-call shift is compensated with a flat stipend of 150 euros per week, plus one day of time off in lieu for each night the engineer was woken between 00:00 and 06:00. Incidents rated severity 1 or severity 2 require a written postmortem within five working days. Postmortems are blameless: they describe what happened and what will change, not who made a mistake.

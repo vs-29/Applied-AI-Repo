@@ -1,0 +1,49 @@
+WEBVTT
+
+00:00:01.000 --> 00:00:09.000
+Welcome back. Today's lecture is about how vector search actually works, and why it sometimes fails in ways that surprise people.
+
+00:00:09.000 --> 00:00:21.000
+Let's start with embeddings. An embedding model turns a piece of text into a list of numbers, a vector, so that texts with similar meaning end up close together in that space.
+
+00:00:21.000 --> 00:00:34.000
+To compare two vectors we usually use cosine similarity, which looks at the angle between them and ignores their length. A score near one means the texts point in almost the same direction.
+
+00:00:34.000 --> 00:00:48.000
+Now, comparing a query against every stored vector is exact but slow once you have millions of them. So real systems use approximate nearest neighbour indexes instead.
+
+00:00:48.000 --> 00:01:03.000
+The most popular one today is HNSW, which stands for hierarchical navigable small world. It builds a layered graph where each vector links to a few close neighbours.
+
+00:01:03.000 --> 00:01:17.000
+A search starts at the sparse top layer, jumps towards the query in big steps, then drops down a layer and refines. It's a bit like zooming in on a map.
+
+00:01:17.000 --> 00:01:30.000
+The trade-off is recall. HNSW can occasionally miss the true closest vector. Parameters like ef control how many candidates it explores, so a higher ef gives better recall but slower queries.
+
+00:01:30.000 --> 00:01:44.000
+Next: chunking. You can't embed a whole book as one vector and expect useful results, so documents are split into chunks, typically a few hundred to a thousand or so characters.
+
+00:01:44.000 --> 00:01:58.000
+If chunks are too large, one vector has to represent several topics and the meaning gets blurred. If they are too small, each chunk lacks the context needed to answer anything.
+
+00:01:58.000 --> 00:02:10.000
+That's why most pipelines add overlap between neighbouring chunks, so a sentence that falls on a boundary still appears whole in at least one chunk.
+
+00:02:10.000 --> 00:02:25.000
+Here's the failure mode I promised. Dense embeddings are great at paraphrase, but weak at exact tokens: product codes, error numbers, rare names. The model may never have learned what those strings mean.
+
+00:02:25.000 --> 00:02:39.000
+Classic keyword search, like BM25, has the opposite strengths. It scores documents by how often the query terms appear, weighted so that rare terms count for much more than common ones.
+
+00:02:39.000 --> 00:02:54.000
+So the standard fix is hybrid search: run both a dense search and a keyword search, then merge the two ranked lists. A simple and robust way to merge them is reciprocal rank fusion.
+
+00:02:54.000 --> 00:03:08.000
+Reciprocal rank fusion ignores the raw scores entirely. Each result gets one over sixty plus its rank in each list, and those values are added up. Results near the top of both lists win.
+
+00:03:08.000 --> 00:03:22.000
+Finally, reranking. After retrieving, say, the top fifty candidates cheaply, you can pass each query and candidate pair through a slower cross-encoder model that reads them together and reorders the list.
+
+00:03:22.000 --> 00:03:35.000
+And whatever you change, measure it. Keep a small set of questions with known answers and track how often the right chunk appears in the top results. That's it for today.
