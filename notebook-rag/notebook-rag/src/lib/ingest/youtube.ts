@@ -43,7 +43,10 @@ export async function extractYouTube(url: string): Promise<ExtractedSource> {
 
   let cues: { text: string; offset: number; duration: number }[];
   try {
-    cues = await YoutubeTranscript.fetchTranscript(videoId);
+    // Prefer English captions; fall back to the video's default track.
+    cues = await YoutubeTranscript.fetchTranscript(videoId, { lang: "en" }).catch(
+      () => YoutubeTranscript.fetchTranscript(videoId),
+    );
   } catch {
     throw new Error(
       "No transcript available for this video (captions may be disabled).",

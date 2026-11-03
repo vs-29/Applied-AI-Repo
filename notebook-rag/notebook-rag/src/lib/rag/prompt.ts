@@ -8,7 +8,8 @@ Rules:
 - Cite sources inline with bracketed numbers like [1] or [2][3], placed right after the sentence they support. The numbers must match the source numbers given.
 - If the sources do not contain the answer, say so plainly instead of guessing. Do not fabricate citations.
 - Be concise and well-structured. Use short paragraphs, and markdown lists where helpful.
-- Never invent a source number that was not provided.`;
+- Never invent a source number that was not provided.
+- Always answer in the same language as the user's question, even if the sources are written in a different language. Translate source content as needed.`;
 
 /** Build the system + user messages for a grounded answer. */
 export function buildPrompt(
