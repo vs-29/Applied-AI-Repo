@@ -10,6 +10,8 @@ export type IndexStatus =
 
 export interface Notebook {
   id: string;
+  /** Auth user id ("<provider>:<accountId>") of the owner. */
+  ownerId: string;
   name: string;
   createdAt: number;
   updatedAt: number;
@@ -17,6 +19,8 @@ export interface Notebook {
 
 export interface Source {
   id: string;
+  /** Copied from the notebook so ownership is checked in one lookup. */
+  ownerId: string;
   notebookId: string;
   type: SourceType;
   title: string;

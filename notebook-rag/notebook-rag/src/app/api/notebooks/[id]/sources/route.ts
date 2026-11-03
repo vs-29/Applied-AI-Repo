@@ -1,6 +1,7 @@
 import { ingestSource, type IngestInput } from "@/lib/ingest";
-import { createSource, getNotebook, getSource, listSources } from "@/lib/store";
+import { createSource, getSource, listSources } from "@/lib/store";
 import { fail, guard, ok, sourceDto } from "@/lib/http";
+import { requireNotebook, requireUserId } from "@/lib/authz";
 import type { SourceType } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -12,6 +13,8 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
+    const userId = await requireUserId();
+    await requireNotebook(params.id, userId);
     const sources = await listSources(params.id);
     return ok(sources.map(sourceDto));
   });
@@ -22,8 +25,8 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
-    const notebook = await getNotebook(params.id);
-    if (!notebook) return fail("Notebook not found.", 404);
+    const userId = await requireUserId();
+    await requireNotebook(params.id, userId);
 
     const form = await req.formData();
     const type = form.get("type") as SourceType | null;
@@ -90,6 +93,7 @@ export async function POST(
     }
 
     const source = await createSource({
+      ownerId: userId,
       notebookId: params.id,
       type,
       title,

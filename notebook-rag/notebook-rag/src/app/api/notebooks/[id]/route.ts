@@ -1,6 +1,7 @@
 import { deleteChunksByNotebook } from "@/lib/qdrant";
-import { deleteNotebook, getNotebook, renameNotebook } from "@/lib/store";
+import { deleteNotebook, renameNotebook } from "@/lib/store";
 import { fail, guard, ok } from "@/lib/http";
+import { requireNotebook, requireUserId } from "@/lib/authz";
 
 export const runtime = "nodejs";
 
@@ -9,9 +10,8 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
-    const notebook = await getNotebook(params.id);
-    if (!notebook) return fail("Notebook not found.", 404);
-    return ok(notebook);
+    const userId = await requireUserId();
+    return ok(await requireNotebook(params.id, userId));
   });
 }
 
@@ -20,6 +20,8 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
+    const userId = await requireUserId();
+    await requireNotebook(params.id, userId);
     const { name } = (await req.json().catch(() => ({}))) as { name?: string };
     if (!name || !name.trim()) return fail("A new name is required.");
     const updated = await renameNotebook(params.id, name);
@@ -33,6 +35,8 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
+    const userId = await requireUserId();
+    await requireNotebook(params.id, userId);
     await deleteChunksByNotebook(params.id);
     await deleteNotebook(params.id);
     return ok({ deleted: true });

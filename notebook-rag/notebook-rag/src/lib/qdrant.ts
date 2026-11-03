@@ -40,6 +40,7 @@ export async function ensureCollections(): Promise<void> {
   await ensureIndex(config.qdrant.chunksCollection, "sourceId");
   await ensureIndex(config.qdrant.entitiesCollection, "kind");
   await ensureIndex(config.qdrant.entitiesCollection, "notebookId");
+  await ensureIndex(config.qdrant.entitiesCollection, "ownerId");
 }
 
 async function ensureIndex(collection: string, field: string): Promise<void> {

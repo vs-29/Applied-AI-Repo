@@ -1,6 +1,7 @@
 import { deleteChunksBySource } from "@/lib/qdrant";
-import { deleteSourceRecord, getSource } from "@/lib/store";
-import { fail, guard, ok, sourceDto } from "@/lib/http";
+import { deleteSourceRecord } from "@/lib/store";
+import { guard, ok, sourceDto } from "@/lib/http";
+import { requireSource, requireUserId } from "@/lib/authz";
 
 export const runtime = "nodejs";
 
@@ -9,9 +10,8 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
-    const source = await getSource(params.id);
-    if (!source) return fail("Source not found.", 404);
-    return ok(sourceDto(source));
+    const userId = await requireUserId();
+    return ok(sourceDto(await requireSource(params.id, userId)));
   });
 }
 
@@ -20,6 +20,8 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
+    const userId = await requireUserId();
+    await requireSource(params.id, userId);
     await deleteChunksBySource(params.id);
     await deleteSourceRecord(params.id);
     return ok({ deleted: true });

@@ -1,6 +1,6 @@
 import { assembleContent } from "@/lib/chunk";
-import { getSource } from "@/lib/store";
-import { fail, guard, ok } from "@/lib/http";
+import { guard, ok } from "@/lib/http";
+import { requireSource, requireUserId } from "@/lib/authz";
 
 export const runtime = "nodejs";
 
@@ -10,8 +10,8 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   return guard(async () => {
-    const source = await getSource(params.id);
-    if (!source) return fail("Source not found.", 404);
+    const userId = await requireUserId();
+    const source = await requireSource(params.id, userId);
     return ok({
       id: source.id,
       type: source.type,

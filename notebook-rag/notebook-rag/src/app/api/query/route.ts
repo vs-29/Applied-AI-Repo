@@ -2,7 +2,8 @@ import { streamChat } from "@/lib/openai";
 import { buildPrompt } from "@/lib/rag/prompt";
 import { retrieve } from "@/lib/rag/retrieve";
 import { STREAM_DELIM } from "@/lib/protocol";
-import { fail } from "@/lib/http";
+import { fail, HttpError } from "@/lib/http";
+import { requireNotebook, requireUserId } from "@/lib/authz";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -14,6 +15,16 @@ export async function POST(req: Request) {
   };
   if (!notebookId || !question?.trim()) {
     return fail("notebookId and question are required.");
+  }
+
+  // Retrieval is filtered by notebookId, so confirming the user owns the
+  // notebook is what keeps one user's chunks out of another's answers.
+  try {
+    const userId = await requireUserId();
+    await requireNotebook(notebookId, userId);
+  } catch (err) {
+    if (err instanceof HttpError) return fail(err.message, err.status);
+    throw err;
   }
 
   const citations = await retrieve(notebookId, question.trim());

@@ -118,7 +118,14 @@ See `.env.example` for the full list. The essentials:
 OPENAI_API_KEY=sk-...
 QDRANT_URL=https://<cluster-id>.<region>.cloud.qdrant.io:6333
 QDRANT_API_KEY=...
+AUTH_SECRET=...            # random string, see .env.example
+AUTH_GITHUB_ID=...         # GitHub OAuth app
+AUTH_GITHUB_SECRET=...
 ```
+
+For GitHub sign-in, create an OAuth app at <https://github.com/settings/developers>
+with callback URL `http://localhost:3000/api/auth/callback/github` (and a second
+app, or an updated URL, for your deployed domain).
 
 Sensible defaults are applied for models, collection names, chunk size/overlap
 (1100 / 180 chars), and retrieval depth (top-k = 6).
@@ -171,8 +178,12 @@ then type out the answer.
   (highlighted) rather than the original binary, since no blob store is
   provisioned. Adding Vercel Blob or S3 would let the PDF viewer show the real
   page image.
-- **No auth / multi-tenancy.** Every visitor shares the same notebooks. Add
-  authentication and scope notebooks to a user id for real use.
+- **Auth via GitHub sign-in, JWT sessions.** Auth.js (`src/auth.ts`) issues a
+  signed cookie; there's no user table. Every notebook and source records an
+  `ownerId`, and every API route checks it (`src/lib/authz.ts`) before reading
+  or writing. Retrieval stays filtered by `notebookId`, and a user can only
+  query notebooks they own, so one user's chunks never reach another's answers.
+  Middleware (`src/middleware.ts`) also blocks signed-out requests up front.
 
 ## Known limitations
 

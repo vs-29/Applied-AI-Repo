@@ -1,7 +1,7 @@
 import { STREAM_DELIM } from "./protocol";
 import type { Citation, Notebook, Source } from "./types";
 
-export type SourceDTO = Omit<Source, "segments" | "content">;
+export type SourceDTO = Omit<Source, "segments" | "content" | "ownerId">;
 
 export interface ChatMessage {
   id: string;

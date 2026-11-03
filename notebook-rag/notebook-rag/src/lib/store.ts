@@ -45,11 +45,15 @@ async function getById<T>(id: string): Promise<T | null> {
 
 // ---------- Notebooks ----------
 
-export async function createNotebook(name: string): Promise<Notebook> {
+export async function createNotebook(
+  name: string,
+  ownerId: string,
+): Promise<Notebook> {
   await ensureCollections();
   const now = Date.now();
   const notebook: Notebook = {
     id: uuid(),
+    ownerId,
     name: name.trim() || "Untitled notebook",
     createdAt: now,
     updatedAt: now,
@@ -58,9 +62,12 @@ export async function createNotebook(name: string): Promise<Notebook> {
   return notebook;
 }
 
-export async function listNotebooks(): Promise<Notebook[]> {
+/** Notebooks owned by one user. */
+export async function listNotebooks(ownerId: string): Promise<Notebook[]> {
   await ensureCollections();
-  const items = await scrollByKind<Notebook & { kind: string }>("notebook");
+  const items = await scrollByKind<Notebook & { kind: string }>("notebook", [
+    { key: "ownerId", match: { value: ownerId } },
+  ]);
   return items
     .map(({ kind: _kind, ...n }) => n as Notebook)
     .sort((a, b) => b.updatedAt - a.updatedAt);
@@ -97,6 +104,7 @@ export async function deleteNotebook(id: string): Promise<void> {
 // ---------- Sources ----------
 
 export async function createSource(input: {
+  ownerId: string;
   notebookId: string;
   type: SourceType;
   title: string;
@@ -105,6 +113,7 @@ export async function createSource(input: {
   const now = Date.now();
   const source: Source = {
     id: uuid(),
+    ownerId: input.ownerId,
     notebookId: input.notebookId,
     type: input.type,
     title: input.title,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SourceItem } from "./SourceItem";
+import { UserMenu } from "./UserMenu";
 import { PlusIcon, TrashIcon } from "./icons";
 import type { SourceDTO } from "@/lib/client";
 import type { Notebook } from "@/lib/types";
@@ -160,6 +161,8 @@ export function Sidebar(props: {
           </ul>
         )}
       </div>
+
+      <UserMenu />
     </aside>
   );
 }
